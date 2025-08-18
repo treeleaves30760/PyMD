@@ -39,6 +39,8 @@ pip install pyexecmd
    ```
 </details>
 
+## Usage
+
 1. **Create a new PyExecMD document:**
 
    ```bash
