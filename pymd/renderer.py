@@ -228,27 +228,122 @@ class PyMDRenderer:
             return error_html
 
     def parse_and_render(self, pymd_content: str) -> str:
-        """Parse PyMD content and render to HTML"""
+        """Parse PyMD content with ``` blocks for code and Markdown syntax for content"""
         self.elements = []
 
-        # Process all content except comments (lines starting with #)
         lines = pymd_content.split('\n')
-        code_lines = []
+        i = 0
 
-        for line in lines:
+        while i < len(lines):
+            line = lines[i]
             stripped_line = line.strip()
-            # Skip empty lines and comments (lines starting with #)
-            if stripped_line and not stripped_line.startswith('#'):
-                code_lines.append(line)
 
-        # Execute all non-comment lines as a single code block
-        if code_lines:
-            code = '\n'.join(code_lines)
-            if code.strip():
-                result = self.execute_code(code)
-                if not result['success']:
-                    error_html = f'<pre class="error">Error: {result["error"]}</pre>'
-                    self.add_element('error', result['error'], error_html)
+            # Skip empty lines
+            if not stripped_line:
+                i += 1
+                continue
+
+            # Handle code blocks with ```
+            if stripped_line == '```':
+                i += 1  # Skip the opening ```
+                code_lines = []
+
+                # Collect all lines until closing ```
+                while i < len(lines):
+                    current_line = lines[i]
+                    if current_line.strip() == '```':
+                        # Found closing ```, stop collecting
+                        i += 1  # Skip the closing ```
+                        break
+                    code_lines.append(current_line)
+                    i += 1
+
+                # Execute the collected code block
+                if code_lines:
+                    code_block = '\n'.join(code_lines)
+                    try:
+                        result = self.execute_code(code_block)
+                        if result['success'] and result['output'].strip():
+                            output_html = f'<pre class="code-output">{result["output"].strip()}</pre>'
+                            self.add_element(
+                                'code_output', result['output'], output_html)
+                    except Exception as e:
+                        error_html = f'<pre class="error">Code execution error: {str(e)}</pre>'
+                        self.add_element('error', str(e), error_html)
+                continue
+
+            # Skip // comments
+            if stripped_line.startswith('//'):
+                i += 1
+                continue
+
+            # Handle headers (#, ##, ###, etc.)
+            if stripped_line.startswith('#'):
+                level = 0
+                for char in stripped_line:
+                    if char == '#':
+                        level += 1
+                    else:
+                        break
+
+                if level > 0 and level <= 6 and stripped_line[level:].strip():
+                    header_text = stripped_line[level:].strip()
+                    header_html = f'<h{level}>{header_text}</h{level}>'
+                    self.add_element(f'h{level}', header_text, header_html)
+                    i += 1
+                    continue
+
+            # Handle unordered lists (- or tab-)
+            if stripped_line.startswith('-') or line.startswith('\t-'):
+                list_items = []
+                while i < len(lines):
+                    current_line = lines[i]
+                    current_stripped = current_line.strip()
+
+                    if current_stripped.startswith('-') or current_line.startswith('\t-'):
+                        # Extract list item text
+                        if current_stripped.startswith('-'):
+                            item_text = current_stripped[1:].strip()
+                        else:  # tab-
+                            item_text = current_line.lstrip('\t-').strip()
+                        list_items.append(item_text)
+                        i += 1
+                    else:
+                        break
+
+                if list_items:
+                    ul_html = '<ul>' + \
+                        ''.join(
+                            f'<li>{item}</li>' for item in list_items) + '</ul>'
+                    self.add_element('ul', list_items, ul_html)
+                continue
+
+            # Handle ordered lists (1., 2., 3., etc.)
+            if re.match(r'^\d+\.\s+', stripped_line):
+                list_items = []
+                while i < len(lines):
+                    current_line = lines[i]
+                    current_stripped = current_line.strip()
+
+                    match = re.match(r'^\d+\.\s+(.*)$', current_stripped)
+                    if match:
+                        item_text = match.group(1).strip()
+                        list_items.append(item_text)
+                        i += 1
+                    else:
+                        break
+
+                if list_items:
+                    ol_html = '<ol>' + \
+                        ''.join(
+                            f'<li>{item}</li>' for item in list_items) + '</ol>'
+                    self.add_element('ol', list_items, ol_html)
+                continue
+
+            # Handle plain text (everything else outside code blocks)
+            text_html = f'<p>{stripped_line}</p>'
+            self.add_element('text', stripped_line, text_html)
+            i += 1
 
         return self.generate_html()
 
@@ -368,6 +463,83 @@ class PyMDRenderer:
             padding: 16px;
             margin: 16px 0;
         }}
+        
+        .code-output {{
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 16px;
+            margin: 16px 0;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 14px;
+            line-height: 1.45;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }}
+        
+        ul, ol {{
+            margin: 16px 0;
+            padding-left: 0;
+            list-style: none;
+        }}
+        
+        ul li, ol li {{
+            margin: 8px 0;
+            padding: 4px 0 4px 28px;
+            line-height: 1.6;
+            position: relative;
+            color: #333;
+        }}
+        
+        ul li::before {{
+            content: "•";
+            color: #666;
+            font-size: 16px;
+            font-weight: bold;
+            position: absolute;
+            left: 12px;
+            top: 4px;
+        }}
+        
+        ol {{
+            counter-reset: list-counter;
+        }}
+        
+        ol li {{
+            counter-increment: list-counter;
+        }}
+        
+        ol li::before {{
+            content: counter(list-counter) ".";
+            color: #666;
+            font-weight: 600;
+            position: absolute;
+            left: 8px;
+            top: 4px;
+            font-size: 14px;
+        }}
+        
+        ul li:hover, ol li:hover {{
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            transition: background-color 0.2s ease;
+        }}
+        
+        /* Nested lists */
+        ul ul, ol ol, ul ol, ol ul {{
+            margin: 4px 0;
+            padding-left: 20px;
+        }}
+        
+        ul ul li::before {{
+            content: "◦";
+            font-size: 14px;
+        }}
+        
+        ul ul ul li::before {{
+            content: "▪";
+            font-size: 12px;
+        }}
     </style>
 </head>
 <body>
@@ -399,36 +571,54 @@ class PyMDRenderer:
 if __name__ == "__main__":
     renderer = PyMDRenderer()
 
-    # Example PyMD content
+    # Example PyMD content with new ``` syntax
     sample_content = """
+// This is a comment and will be ignored
+
+# Welcome to PyMD
+This is a demonstration of PyMD with new ``` syntax for code blocks.
+
+## Basic Features
+
+- Markdown content outside code blocks
+- Python code execution inside ``` blocks
+- Variables persist across code blocks
+- Clean separation of content and code
+
+1. First feature: Headers and lists work normally
+2. Second feature: Code blocks are clearly separated
+3. Third feature: Mixed content is easy to read
+
+## Python Code Execution
+
 ```
-pymd.h1("Welcome to PyMD")
-pymd.text("This is a demonstration of PyMD - a Python-based markup language.")
+x = 5
+y = 10
+print(f"Sum: {x + y}")
+```
 
-pymd.h2("Basic Usage")
-pymd.text("You can create headings, text, and more using Python syntax.")
+## Data Processing
 
-# Let's create some data
-import numpy as np
-data = np.random.randn(100)
+```
+import random
+data = [random.randint(1, 100) for _ in range(5)]
+print(f"Generated data: {data}")
+average = sum(data) / len(data)
+print(f"Average: {average:.2f}")
+```
 
-pymd.h2("Data Visualization")
-pymd.text("Here's a simple plot:")
+## Using PyMD Functions
 
-plt.figure(figsize=(10, 6))
-plt.plot(data)
-plt.title("Random Data")
-plt.xlabel("Index")
-plt.ylabel("Value")
-pymd.image(plt.gcf(), "A plot of random data")
+```
+pymd.h2("Generated Header")
+pymd.text(f"The average from above is: {average:.2f}")
+```
 
-pymd.h2("Tables")
-df = pd.DataFrame({
-    'A': [1, 2, 3, 4],
-    'B': ['a', 'b', 'c', 'd'],
-    'C': [1.1, 2.2, 3.3, 4.4]
-})
-pymd.table(df)
+Regular text works perfectly between code blocks!
+
+```
+print("Variables persist across blocks!")
+print(f"x = {x}, y = {y}")
 ```
 """
 

@@ -1,215 +1,278 @@
-# PyExecMD Example Document
-pymd.h1("🐍 PyExecMD Demonstration")
+# PyMD: Python-Powered Markdown Demo
 
-pymd.text("Welcome to PyExecMD! This document showcases the capabilities of this Python-based markup language.")
+Welcome to PyMD! This document demonstrates the powerful combination of markdown-style syntax with Python code execution.
 
-pymd.h2("🎯 Basic Features")
+## Key Features
 
-pymd.h3("Text and Headings")
-pymd.text("You can create rich text content using simple Python function calls.")
-pymd.text("This approach gives you the power of Python while maintaining the simplicity of markup languages.")
+- **Markdown Syntax**: Use familiar markdown outside code blocks
+- **Python Execution**: Run Python code inside ``` blocks  
+- **Variable Persistence**: Variables persist across code blocks
+- **Beautiful Output**: Clean, responsive HTML rendering
 
-pymd.h3("Code Display")
-pymd.text("You can display code blocks with syntax highlighting:")
+Let's explore these features with live examples!
 
-sample_code = '''def hello_world():
-    print("Hello from PyExecMD!")
-    return "PyExecMD rocks!"
+## Basic Python Execution
 
-result = hello_world()'''
+```
+# Define some variables
+name = "PyMD"
+version = "1.0"
+year = 2024
 
-pymd.code(sample_code, "python")
+print(f"Welcome to {name} v{version}!")
+print(f"Created in {year}")
+```
 
-pymd.h2("📊 Data Visualization")
+The variables we just defined are available in subsequent code blocks:
 
-import numpy as np
-import matplotlib.pyplot as plt
+```
+print(f"Confirming: We're using {name} version {version}")
+
+# Let's do some calculations
+numbers = [1, 2, 3, 4, 5]
+total = sum(numbers)
+average = total / len(numbers)
+
+print(f"Numbers: {numbers}")
+print(f"Sum: {total}")
+print(f"Average: {average}")
+```
+
+## Data Analysis with Pandas
+
+```
 import pandas as pd
+import numpy as np
 
-pymd.text("Let's create some interesting visualizations with real data:")
-
-# Generate sample data
+# Create sample sales data
 np.random.seed(42)
-days = np.arange(1, 31)
-temperature = 20 + 10 * np.sin(days * 0.2) + np.random.normal(0, 2, 30)
-humidity = 60 + 20 * np.cos(days * 0.15) + np.random.normal(0, 5, 30)
+months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
+products = ['Widget A', 'Widget B', 'Widget C']
 
-# Create a beautiful plot
-plt.style.use('seaborn-v0_8')
-fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8))
+data = []
+for product in products:
+    for month in months:
+        sales = np.random.randint(50, 200)
+        data.append({'Product': product, 'Month': month, 'Sales': sales})
 
-# Temperature plot
-ax1.plot(days, temperature, 'o-', color='#e74c3c', linewidth=2, markersize=6, label='Temperature')
-ax1.set_title('Daily Temperature', fontsize=14, fontweight='bold')
-ax1.set_ylabel('Temperature (°C)')
-ax1.grid(True, alpha=0.3)
-ax1.legend()
+df = pd.DataFrame(data)
+print("Sample Sales Data:")
+pymd.table(df.head(10))
+```
 
-# Humidity plot
-ax2.plot(days, humidity, 's-', color='#3498db', linewidth=2, markersize=6, label='Humidity')
-ax2.set_title('Daily Humidity', fontsize=14, fontweight='bold')
-ax2.set_xlabel('Day of Month')
-ax2.set_ylabel('Humidity (%)')
-ax2.grid(True, alpha=0.3)
-ax2.legend()
+Let's analyze this data:
+
+```
+# Calculate total sales by product
+product_totals = df.groupby('Product')['Sales'].sum().sort_values(ascending=False)
+print("Total Sales by Product:")
+for product, sales in product_totals.items():
+    print(f"  {product}: ${sales:,}")
+
+print(f"\nBest performing product: {product_totals.index[0]}")
+print(f"Total sales across all products: ${product_totals.sum():,}")
+```
+
+## Data Visualization
+
+```
+import matplotlib.pyplot as plt
+
+# Create a sales trend chart
+monthly_totals = df.groupby('Month')['Sales'].sum()
+
+plt.figure(figsize=(10, 6))
+plt.plot(monthly_totals.index, monthly_totals.values, marker='o', linewidth=2, markersize=8)
+plt.title('Total Sales Trend by Month', fontsize=16, fontweight='bold')
+plt.xlabel('Month', fontsize=12)
+plt.ylabel('Total Sales ($)', fontsize=12)
+plt.grid(True, alpha=0.3)
+plt.xticks(rotation=45)
+
+# Add value labels on points
+for i, v in enumerate(monthly_totals.values):
+    plt.text(i, v + 20, f'${v:,}', ha='center', va='bottom', fontweight='bold')
 
 plt.tight_layout()
-pymd.image(plt.gcf(), "Weather data visualization showing temperature and humidity over 30 days")
+pymd.image(plt.gcf(), "Monthly sales trend showing business growth")
+```
 
-pymd.h2("📈 Advanced Plotting")
+Let's also create a product comparison chart:
 
-pymd.text("Let's create a more complex visualization with multiple data series:")
-
-# Create correlation plot
+```
+# Product performance comparison
 plt.figure(figsize=(10, 6))
-plt.scatter(temperature, humidity, c=days, cmap='viridis', s=100, alpha=0.7, edgecolors='black')
-plt.colorbar(label='Day of Month')
-plt.xlabel('Temperature (°C)')
-plt.ylabel('Humidity (%)')
-plt.title('Temperature vs Humidity Correlation', fontsize=14, fontweight='bold')
+bars = plt.bar(product_totals.index, product_totals.values, 
+               color=['#FF6B6B', '#4ECDC4', '#45B7D1'], alpha=0.8)
 
-# Add trend line
-z = np.polyfit(temperature, humidity, 1)
-p = np.poly1d(z)
-plt.plot(temperature, p(temperature), "r--", alpha=0.8, linewidth=2, label=f'Trend: y = {z[0]:.2f}x + {z[1]:.2f}')
-plt.legend()
-plt.grid(True, alpha=0.3)
+plt.title('Total Sales by Product', fontsize=16, fontweight='bold')
+plt.xlabel('Product', fontsize=12)
+plt.ylabel('Total Sales ($)', fontsize=12)
+plt.grid(True, alpha=0.3, axis='y')
 
-pymd.image(plt.gcf(), "Scatter plot showing the relationship between temperature and humidity")
+# Add value labels on bars
+for bar, value in zip(bars, product_totals.values):
+    plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 50, 
+             f'${value:,}', ha='center', va='bottom', fontweight='bold')
 
-pymd.h2("📋 Data Tables")
+plt.tight_layout()
+pymd.image(plt.gcf(), "Product sales comparison showing Widget A leading")
+```
 
-pymd.text("PyExecMD can beautifully render pandas DataFrames and other tabular data:")
+## Advanced Python Features
 
-# Create a sample dataset
-weather_data = pd.DataFrame({
-    'Day': days[:10],
-    'Temperature (°C)': np.round(temperature[:10], 1),
-    'Humidity (%)': np.round(humidity[:10], 1),
-    'Weather': np.random.choice(['Sunny', 'Cloudy', 'Rainy'], 10),
-    'Wind Speed (km/h)': np.round(np.random.uniform(5, 25, 10), 1)
+```
+# Define a custom analysis function
+def analyze_product_performance(df, product_name):
+    product_data = df[df['Product'] == product_name]
+    
+    stats = {
+        'total_sales': product_data['Sales'].sum(),
+        'avg_monthly': product_data['Sales'].mean(),
+        'best_month': product_data.loc[product_data['Sales'].idxmax(), 'Month'],
+        'worst_month': product_data.loc[product_data['Sales'].idxmin(), 'Month'],
+        'consistency': product_data['Sales'].std()
+    }
+    
+    return stats
+
+# Analyze each product
+print("Detailed Product Analysis:")
+print("=" * 50)
+
+for product in products:
+    stats = analyze_product_performance(df, product)
+    print(f"\n{product}:")
+    print(f"  Total Sales: ${stats['total_sales']:,}")
+    print(f"  Monthly Average: ${stats['avg_monthly']:.0f}")
+    print(f"  Best Month: {stats['best_month']}")
+    print(f"  Worst Month: {stats['worst_month']}")
+    print(f"  Consistency (std dev): ${stats['consistency']:.2f}")
+```
+
+## Code Display Feature
+
+Sometimes you want to show code without executing it:
+
+```
+# Example algorithm for reference
+algorithm_code = '''
+def fibonacci(n):
+    """Generate fibonacci sequence up to n terms."""
+    sequence = []
+    a, b = 0, 1
+    
+    for _ in range(n):
+        sequence.append(a)
+        a, b = b, a + b
+    
+    return sequence
+
+def is_prime(num):
+    """Check if a number is prime."""
+    if num < 2:
+        return False
+    for i in range(2, int(num ** 0.5) + 1):
+        if num % i == 0:
+            return False
+    return True
+'''
+
+pymd.code(algorithm_code, "python")
+print("Algorithm examples displayed above (not executed)")
+```
+
+Now let's actually use one of those functions:
+
+```
+# Execute the fibonacci function
+exec(algorithm_code)  # This makes the functions available
+
+# Generate fibonacci sequence
+fib_sequence = fibonacci(10)
+print(f"First 10 Fibonacci numbers: {fib_sequence}")
+
+# Check some numbers for primality
+test_numbers = [17, 25, 29, 35, 41]
+print("\nPrime number check:")
+for num in test_numbers:
+    result = "prime" if is_prime(num) else "not prime"
+    print(f"  {num} is {result}")
+```
+
+## PyMD Helper Functions
+
+You can also use PyMD functions to create content programmatically:
+
+```
+pymd.h2("Programmatically Generated Content")
+pymd.text("This header and text were created using PyMD functions within a code block.")
+
+# Create a summary table
+summary_data = pd.DataFrame({
+    'Metric': ['Total Products', 'Total Months', 'Total Records', 'Average Sale', 'Max Sale'],
+    'Value': [len(products), len(months), len(df), f"${df['Sales'].mean():.2f}", f"${df['Sales'].max()}"]
 })
 
-pymd.table(weather_data)
+pymd.table(summary_data)
+```
 
-pymd.h2("🧮 Dynamic Calculations")
+## Markdown Features
 
-pymd.text("Since PyexecMD executes Python code, you can perform calculations and display results dynamically:")
+Outside code blocks, you can use standard markdown syntax:
 
-# Calculate statistics
-avg_temp = np.mean(temperature)
-max_temp = np.max(temperature)
-min_temp = np.min(temperature)
-temp_range = max_temp - min_temp
+### Lists Work Great
 
-pymd.text(f"**Temperature Statistics:**")
-pymd.text(f"• Average temperature: {avg_temp:.1f}°C")
-pymd.text(f"• Maximum temperature: {max_temp:.1f}°C")
-pymd.text(f"• Minimum temperature: {min_temp:.1f}°C")
-pymd.text(f"• Temperature range: {temp_range:.1f}°C")
+- First unordered item
+- Second unordered item  
+- Third unordered item
 
-# Humidity statistics
-avg_humidity = np.mean(humidity)
-pymd.text(f"\n**Humidity Statistics:**")
-pymd.text(f"• Average humidity: {avg_humidity:.1f}%")
+1. First ordered item
+2. Second ordered item
+3. Third ordered item
 
-# Correlation
-correlation = np.corrcoef(temperature, humidity)[0, 1]
-pymd.text(f"\n**Correlation:**")
-pymd.text(f"• Temperature-Humidity correlation: {correlation:.3f}")
+### Mixed Content
 
-pymd.h2("🎨 Custom Visualizations")
+You can seamlessly mix markdown content with code blocks. This makes documentation clean and readable while keeping the code execution powerful.
 
-pymd.text("Let's create a beautiful dashboard-style visualization:")
+## Interactive Development
 
-# Create a subplot grid
-fig = plt.figure(figsize=(15, 10))
-gs = fig.add_gridspec(3, 3, hspace=0.3, wspace=0.3)
-
-# Main temperature time series
-ax1 = fig.add_subplot(gs[0, :])
-ax1.plot(days, temperature, 'o-', color='#e74c3c', linewidth=3, markersize=8)
-ax1.fill_between(days, temperature, alpha=0.3, color='#e74c3c')
-ax1.set_title('Temperature Over Time', fontsize=16, fontweight='bold')
-ax1.set_ylabel('Temperature (°C)')
-ax1.grid(True, alpha=0.3)
-
-# Temperature histogram
-ax2 = fig.add_subplot(gs[1, 0])
-ax2.hist(temperature, bins=10, color='#e74c3c', alpha=0.7, edgecolor='black')
-ax2.set_title('Temperature Distribution')
-ax2.set_xlabel('Temperature (°C)')
-ax2.set_ylabel('Frequency')
-
-# Humidity histogram
-ax3 = fig.add_subplot(gs[1, 1])
-ax3.hist(humidity, bins=10, color='#3498db', alpha=0.7, edgecolor='black')
-ax3.set_title('Humidity Distribution')
-ax3.set_xlabel('Humidity (%)')
-ax3.set_ylabel('Frequency')
-
-# Box plots
-ax4 = fig.add_subplot(gs[1, 2])
-ax4.boxplot([temperature, humidity], labels=['Temp', 'Humidity'])
-ax4.set_title('Data Distribution')
-ax4.set_ylabel('Values')
-
-# Correlation heatmap data
-corr_data = np.array([[1.0, correlation], [correlation, 1.0]])
-ax5 = fig.add_subplot(gs[2, :])
-im = ax5.imshow(corr_data, cmap='coolwarm', vmin=-1, vmax=1)
-ax5.set_xticks([0, 1])
-ax5.set_yticks([0, 1])
-ax5.set_xticklabels(['Temperature', 'Humidity'])
-ax5.set_yticklabels(['Temperature', 'Humidity'])
-ax5.set_title('Correlation Matrix')
-
-# Add correlation values to heatmap
-for i in range(2):
-    for j in range(2):
-        text = ax5.text(j, i, f'{corr_data[i, j]:.3f}', 
-                       ha="center", va="center", color="white", fontweight='bold')
-
-plt.colorbar(im, ax=ax5)
-
-pymd.image(plt.gcf(), "Comprehensive weather data dashboard with multiple visualizations")
-
-pymd.h2("🔄 Live Updates")
-
-pymd.text("One of the most powerful features of PyExecMD is that when you save this file, the content updates automatically!")
-
-pymd.text("Try editing this file and watch the live preview update in real-time.")
-
+```
+# Real-time updates
 import datetime
 current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-pymd.text(f"**Last updated:** {current_time}")
+print(f"Document last executed: {current_time}")
 
-pymd.h2("🚀 Getting Started")
+# You can modify this code and see results update immediately
+message = "Try changing this message and saving the file!"
+print(message)
+```
 
-pymd.text("To start using PyExecMD:")
+## Conclusion
 
-setup_instructions = '''# Install dependencies
-pip install -r requirements.txt
+This example demonstrates PyMD's powerful features:
 
-# Create a new PyExecMD file
-pyexecmd create my_document.pymd
+1. **Clean Syntax**: Markdown-style headers, lists, and text
+2. **Code Execution**: Python code runs and displays output
+3. **Variable Persistence**: Data flows between code blocks
+4. **Rich Visualizations**: Matplotlib charts render beautifully
+5. **Data Analysis**: Full pandas functionality
+6. **Mixed Content**: Seamless blend of documentation and code
 
-# Start live preview
-pyexecmd serve my_document.pymd
+```
+# Final message
+success_message = "🎉 PyMD makes technical documentation beautiful and interactive!"
+print(success_message)
 
-# Or render to HTML
-pyexecmd render my_document.pymd -o output.html'''
+# Show some final stats
+print(f"\nDocument stats:")
+print(f"- Data points analyzed: {len(df)}")
+print(f"- Visualizations created: 2")
+print(f"- Functions defined: 3")
+print(f"- Variables available: {len([var for var in globals() if not var.startswith('_')])}")
+```
 
-pymd.code(setup_instructions, "bash")
+That's PyMD in action! Try modifying the code blocks above and watch the results update in real-time with the live preview server.
 
-pymd.h2("✨ Conclusion")
-
-pymd.text("PyExecMD combines the best of both worlds:")
-pymd.text("• **Simplicity** of Markdown")
-pymd.text("• **Power** of Python")
-pymd.text("• **Live rendering** for immediate feedback")
-pymd.text("• **Rich visualizations** with matplotlib, pandas, and more")
-
-pymd.text("Perfect for data science reports, documentation, tutorials, and interactive documents!")
-
-pymd.text("Happy coding with PyExecMD! 🐍📝✨")
+// This is a comment - it won't appear in the rendered output
+// Perfect for leaving notes during development!

@@ -1,10 +1,12 @@
-# PyExecMD: Python-Powered Markdown
+# PyMD: Python-Powered Markdown
 
-PyExecMD is a revolutionary markup language that combines the simplicity of Markdown with the full power of Python. Write documents with executable code, dynamic content, and beautiful visualizations that update in real-time!
+PyMD is a revolutionary markup language that combines familiar markdown syntax with the full power of Python execution. Write beautiful documents using standard markdown headers, lists, and text, while executing Python code in clearly separated code blocks!
 
 ## ✨ Features
 
-- **🐍 Python-Based Syntax**: Write markup using familiar Python function calls
+- **📝 Markdown Syntax**: Use familiar markdown headers (#), lists (-), and plain text
+- **🐍 Python Code Blocks**: Execute Python code within ``` fenced blocks
+- **🔗 Variable Persistence**: Variables persist across code blocks in the same document
 - **🔴 Live Preview**: Real-time rendering with auto-refresh as you edit
 - **📊 Rich Visualizations**: Built-in support for matplotlib, pandas, and other data science libraries
 - **🧮 Dynamic Content**: Execute Python code and display results inline
@@ -43,7 +45,7 @@ pip install pyexecmd
 
 ## Usage
 
-1. **Create a new PyExecMD document:**
+1. **Create a new PyMD document:**
 
    ```bash
    pyexecmd create my_document.pymd
@@ -65,64 +67,105 @@ pip install pyexecmd
    pyexecmd render my_document.pymd -o output.html
    ```
 
-## 📝 PyExecMD Syntax
+## 📝 PyMD Syntax
 
-PyExecMD uses Python function calls to create content:
+PyMD combines familiar markdown syntax with Python code execution:
 
-### Headings
+### Markdown Content (Outside Code Blocks)
 
-```python
-pymd.h1("Main Title")
-pymd.h2("Section Title")
-pymd.h3("Subsection Title")
+**Headers:**
+```markdown
+# Main Title
+## Section Title
+### Subsection Title
 ```
 
-### Text
+**Lists:**
+```markdown
+- Unordered list item
+- Another unordered item
 
-```python
-pymd.text("This is a paragraph of text.")
-pymd.text("You can write **bold** and *italic* text too!")
+1. Ordered list item
+2. Another ordered item
 ```
 
-### Code Blocks
-
-```python
-code_sample = '''
-def hello_world():
-    print("Hello, PyExecMD!")
-'''
-pymd.code(code_sample, "python")
+**Plain Text:**
+```markdown
+This is a paragraph of regular text.
+You can write multiple paragraphs easily.
 ```
 
-### Images and Plots
+**Comments:**
+```markdown
+// This is a comment and will be ignored
+```
 
-```python
-import matplotlib.pyplot as plt
+### Python Code Execution (Inside ``` Blocks)
+
+**Simple Code Execution:**
+```markdown
+```
+x = 42
+y = "Hello, PyMD!"
+print(f"{y} The answer is {x}")
+```
+```
+
+**Data Analysis:**
+```markdown
+```
+import pandas as pd
 import numpy as np
+
+# Create sample data
+data = pd.DataFrame({
+    'Name': ['Alice', 'Bob', 'Charlie'],
+    'Score': [95, 87, 92]
+})
+
+print("Sample Data:")
+pymd.table(data)
+```
+```
+
+**Visualizations:**
+```markdown
+```
+import matplotlib.pyplot as plt
 
 x = np.linspace(0, 10, 100)
 y = np.sin(x)
 
-plt.figure(figsize=(10, 6))
-plt.plot(x, y)
-plt.title("Sine Wave")
+plt.figure(figsize=(8, 5))
+plt.plot(x, y, 'b-', linewidth=2)
+plt.title("Sine Wave Visualization")
+plt.grid(True)
 
-pymd.image(plt.gcf(), "Beautiful sine wave visualization")
+pymd.image(plt.gcf(), "Beautiful sine wave")
+```
 ```
 
-### Tables
-
-```python
-import pandas as pd
-
-df = pd.DataFrame({
-    'Name': ['Alice', 'Bob', 'Charlie'],
-    'Age': [25, 30, 35],
-    'Score': [95, 87, 92]
-})
-
-pymd.table(df)
+**Code Display:**
+```markdown
 ```
+sample_code = '''
+def factorial(n):
+    if n <= 1:
+        return 1
+    return n * factorial(n-1)
+'''
+
+pymd.code(sample_code, "python")
+print(f"Factorial of 5 is: {factorial(5)}")
+```
+```
+
+### Key Features
+
+- **Variable Persistence**: Variables defined in one code block are available in subsequent blocks
+- **Mixed Content**: Alternate between markdown content and Python code seamlessly  
+- **Clean Separation**: Use ``` to clearly separate documentation from executable code
+- **Rich Output**: Code execution results are displayed with beautiful formatting
 
 ## 📁 Project Structure
 
@@ -143,13 +186,23 @@ PyMD/
 
 ## 🛠️ API Reference
 
-### PyExecMD Class Methods
+### Markdown Syntax (Outside Code Blocks)
 
-- `pymd.h1(text)` - Create level 1 heading
-- `pymd.h2(text)` - Create level 2 heading
-- `pymd.h3(text)` - Create level 3 heading
-- `pymd.text(content)` - Create paragraph text
-- `pymd.code(content, language)` - Create code block
+- `# Header` - Create level 1 heading
+- `## Header` - Create level 2 heading  
+- `### Header` - Create level 3 heading
+- `- Item` - Unordered list item
+- `1. Item` - Ordered list item
+- `Plain text` - Regular paragraph text
+- `// Comment` - Comments (ignored during rendering)
+
+### PyMD Functions (Inside Code Blocks)
+
+- `pymd.h1(text)` - Create level 1 heading programmatically
+- `pymd.h2(text)` - Create level 2 heading programmatically
+- `pymd.h3(text)` - Create level 3 heading programmatically
+- `pymd.text(content)` - Create paragraph text programmatically
+- `pymd.code(content, language)` - Display code block with syntax highlighting
 - `pymd.image(plot_obj, caption)` - Render matplotlib plots
 - `pymd.table(data)` - Render pandas DataFrames or tables
 
@@ -176,12 +229,15 @@ pyexecmd render <input> [-o OUTPUT]
 
 ## 🌟 Examples
 
-Check out `example.pymd` for a comprehensive demonstration of PyExecMD features, including:
+Check out `example.pymd` for a comprehensive demonstration of PyMD features, including:
 
-- Beautiful data visualizations
-- Dynamic calculations
-- Interactive tables
-- Real-time updates
+- Markdown-style headers, lists, and text
+- Python code execution with output
+- Beautiful data visualizations with matplotlib
+- Dynamic calculations and variable persistence
+- Interactive tables with pandas
+- Mixed content workflow
+- Real-time preview updates
 
 ## 🤝 Contributing
 

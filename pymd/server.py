@@ -556,6 +556,83 @@ class PyMDServer:
             margin: 16px 0;
         }
         
+        .code-output {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 16px;
+            margin: 16px 0;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 14px;
+            line-height: 1.45;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        ul, ol {
+            margin: 16px 0;
+            padding-left: 0;
+            list-style: none;
+        }
+        
+        ul li, ol li {
+            margin: 8px 0;
+            padding: 4px 0 4px 28px;
+            line-height: 1.6;
+            position: relative;
+            color: #333;
+        }
+        
+        ul li::before {
+            content: "•";
+            color: #666;
+            font-size: 16px;
+            font-weight: bold;
+            position: absolute;
+            left: 12px;
+            top: 4px;
+        }
+        
+        ol {
+            counter-reset: list-counter;
+        }
+        
+        ol li {
+            counter-increment: list-counter;
+        }
+        
+        ol li::before {
+            content: counter(list-counter) ".";
+            color: #666;
+            font-weight: 600;
+            position: absolute;
+            left: 8px;
+            top: 4px;
+            font-size: 14px;
+        }
+        
+        ul li:hover, ol li:hover {
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            transition: background-color 0.2s ease;
+        }
+        
+        /* Nested lists */
+        ul ul, ol ol, ul ol, ol ul {
+            margin: 4px 0;
+            padding-left: 20px;
+        }
+        
+        ul ul li::before {
+            content: "◦";
+            font-size: 14px;
+        }
+        
+        ul ul ul li::before {
+            content: "▪";
+            font-size: 12px;
+        }
+        
         .footer {
             border-top: 1px solid #eaecef;
             padding: 20px 0;
@@ -887,6 +964,83 @@ class PyMDServer:
             border-radius: 6px;
             padding: 16px;
             margin: 16px 0;
+        }}
+        
+        .code-output {{
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 16px;
+            margin: 16px 0;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 14px;
+            line-height: 1.45;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }}
+        
+        ul, ol {{
+            margin: 16px 0;
+            padding-left: 0;
+            list-style: none;
+        }}
+        
+        ul li, ol li {{
+            margin: 8px 0;
+            padding: 4px 0 4px 28px;
+            line-height: 1.6;
+            position: relative;
+            color: #333;
+        }}
+        
+        ul li::before {{
+            content: "•";
+            color: #666;
+            font-size: 16px;
+            font-weight: bold;
+            position: absolute;
+            left: 12px;
+            top: 4px;
+        }}
+        
+        ol {{
+            counter-reset: list-counter;
+        }}
+        
+        ol li {{
+            counter-increment: list-counter;
+        }}
+        
+        ol li::before {{
+            content: counter(list-counter) ".";
+            color: #666;
+            font-weight: 600;
+            position: absolute;
+            left: 8px;
+            top: 4px;
+            font-size: 14px;
+        }}
+        
+        ul li:hover, ol li:hover {{
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            transition: background-color 0.2s ease;
+        }}
+        
+        /* Nested lists */
+        ul ul, ol ol, ul ol, ol ul {{
+            margin: 4px 0;
+            padding-left: 20px;
+        }}
+        
+        ul ul li::before {{
+            content: "◦";
+            font-size: 14px;
+        }}
+        
+        ul ul ul li::before {{
+            content: "▪";
+            font-size: 12px;
         }}
         
         @keyframes fadeIn {{
