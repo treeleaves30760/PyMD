@@ -1,8 +1,8 @@
 ```
-# PyMD Example Document
-pymd.h1("🐍 PyMD Demonstration")
+# Py-MD Example Document
+pymd.h1("🐍 Py-MD Demonstration")
 
-pymd.text("Welcome to PyMD! This document showcases the capabilities of this Python-based markup language.")
+pymd.text("Welcome to Py-MD! This document showcases the capabilities of this Python-based markup language.")
 
 pymd.h2("🎯 Basic Features")
 
@@ -14,8 +14,8 @@ pymd.h3("Code Display")
 pymd.text("You can display code blocks with syntax highlighting:")
 
 sample_code = '''def hello_world():
-    print("Hello from PyMD!")
-    return "PyMD rocks!"
+    print("Hello from Py-MD!")
+    return "Py-MD rocks!"
 
 result = hello_world()'''
 
@@ -80,7 +80,7 @@ pymd.image(plt.gcf(), "Scatter plot showing the relationship between temperature
 
 pymd.h2("📋 Data Tables")
 
-pymd.text("PyMD can beautifully render pandas DataFrames and other tabular data:")
+pymd.text("Py-MD can beautifully render pandas DataFrames and other tabular data:")
 
 # Create a sample dataset
 weather_data = pd.DataFrame({
@@ -95,7 +95,7 @@ pymd.table(weather_data)
 
 pymd.h2("🧮 Dynamic Calculations")
 
-pymd.text("Since PyMD executes Python code, you can perform calculations and display results dynamically:")
+pymd.text("Since Py-MD executes Python code, you can perform calculations and display results dynamically:")
 
 # Calculate statistics
 avg_temp = np.mean(temperature)
@@ -205,7 +205,7 @@ pymd.code(setup_instructions, "bash")
 
 pymd.h2("✨ Conclusion")
 
-pymd.text("PyMD combines the best of both worlds:")
+pymd.text("Py-MD combines the best of both worlds:")
 pymd.text("• **Simplicity** of Markdown")
 pymd.text("• **Power** of Python")
 pymd.text("• **Live rendering** for immediate feedback")
@@ -213,5 +213,5 @@ pymd.text("• **Rich visualizations** with matplotlib, pandas, and more")
 
 pymd.text("Perfect for data science reports, documentation, tutorials, and interactive documents!")
 
-pymd.text("Happy coding with PyMD! 🐍📝✨")
+pymd.text("Happy coding with Py-MD! 🐍📝✨")
 ```

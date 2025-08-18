@@ -1,6 +1,6 @@
-# PyMD: Python-Powered Markdown
+# Py-MD: Python-Powered Markdown
 
-PyMD is a revolutionary markup language that combines the simplicity of Markdown with the full power of Python. Write documents with executable code, dynamic content, and beautiful visualizations that update in real-time!
+Py-MD is a revolutionary markup language that combines the simplicity of Markdown with the full power of Python. Write documents with executable code, dynamic content, and beautiful visualizations that update in real-time!
 
 ## ✨ Features
 
@@ -19,7 +19,7 @@ PyMD is a revolutionary markup language that combines the simplicity of Markdown
 **Option 1: Install from PyPI (Recommended)**
 
 ```bash
-pip install pymd
+pip install py-md
 ```
 
 **Option 2: Install from source**
@@ -67,9 +67,9 @@ pymd serve example.pymd --port 8000
    pymd render my_document.pymd -o output.html
    ```
 
-## 📝 PyMD Syntax
+## 📝 Py-MD Syntax
 
-PyMD uses Python function calls to create content:
+Py-MD uses Python function calls to create content:
 
 ### Headings
 
@@ -145,7 +145,7 @@ PyMD/
 
 ## 🛠️ API Reference
 
-### PyMD Class Methods
+### Py-MD Class Methods
 
 - `pymd.h1(text)` - Create level 1 heading
 - `pymd.h2(text)` - Create level 2 heading
@@ -178,7 +178,7 @@ pymd render <input> [-o OUTPUT]
 
 ## 🌟 Examples
 
-Check out `example.pymd` for a comprehensive demonstration of PyMD features, including:
+Check out `example.pymd` for a comprehensive demonstration of Py-MD features, including:
 
 - Beautiful data visualizations
 - Dynamic calculations
