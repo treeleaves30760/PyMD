@@ -1,8 +1,6 @@
-```
 pymd.h1("Hello PyMD!")
 pymd.text("This is a simple test document.")
 
 # Simple calculation
 result = 2 + 2
 pymd.text(f"2 + 2 = {result}")
-```

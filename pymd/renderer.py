@@ -231,33 +231,19 @@ class PyMDRenderer:
         """Parse PyMD content and render to HTML"""
         self.elements = []
 
-        # Split content into code blocks and execute them
+        # Process all content except comments (lines starting with #)
         lines = pymd_content.split('\n')
-        current_block = []
-        in_code_block = False
+        code_lines = []
 
         for line in lines:
-            if line.strip().startswith('```'):
-                if in_code_block:
-                    # End of code block - execute it
-                    code = '\n'.join(current_block)
-                    if code.strip():
-                        result = self.execute_code(code)
-                        if not result['success']:
-                            error_html = f'<pre class="error">Error: {result["error"]}</pre>'
-                            self.add_element(
-                                'error', result['error'], error_html)
-                    current_block = []
-                    in_code_block = False
-                else:
-                    # Start of code block
-                    in_code_block = True
-            elif in_code_block:
-                current_block.append(line)
+            stripped_line = line.strip()
+            # Skip empty lines and comments (lines starting with #)
+            if stripped_line and not stripped_line.startswith('#'):
+                code_lines.append(line)
 
-        # Execute any remaining code block
-        if current_block:
-            code = '\n'.join(current_block)
+        # Execute all non-comment lines as a single code block
+        if code_lines:
+            code = '\n'.join(code_lines)
             if code.strip():
                 result = self.execute_code(code)
                 if not result['success']:

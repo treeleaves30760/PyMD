@@ -1,4 +1,3 @@
-```
 # PyExecMD Example Document
 pymd.h1("🐍 PyExecMD Demonstration")
 
@@ -214,4 +213,3 @@ pymd.text("• **Rich visualizations** with matplotlib, pandas, and more")
 pymd.text("Perfect for data science reports, documentation, tutorials, and interactive documents!")
 
 pymd.text("Happy coding with PyExecMD! 🐍📝✨")
-```
