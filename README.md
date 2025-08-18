@@ -21,8 +21,9 @@ PyExecMD is a revolutionary markup language that combines the simplicity of Mark
 ```bash
 pip install pyexecmd
 ```
-
-**Option 2: Install from source**
+<details>
+   
+<summary> Option 2: Install from source </summary>
 
 1. **Clone the repository:**
 
@@ -36,14 +37,7 @@ pip install pyexecmd
    ```bash
    pip install -e .
    ```
-
-### Quick Test
-
-```bash
-pyexecmd serve example.pymd --port 8000
-```
-
-### Basic Usage
+</details>
 
 1. **Create a new PyExecMD document:**
 
