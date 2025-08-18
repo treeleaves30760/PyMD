@@ -1,4 +1,4 @@
-# PyMD: Python-Powered Markdown Demo
+# PyExecMD: Python-Executable Markdown
 
 Welcome to PyMD! This document demonstrates the powerful combination of markdown-style syntax with Python code execution.
 
@@ -15,27 +15,27 @@ Let's explore these features with live examples!
 
 ```
 # Define some variables
-name = "PyMD"
-version = "1.0"
-year = 2024
+name = "PyExecMD"
+version = "0.1.0"
+year = 2025
 
-print(f"Welcome to {name} v{version}!")
-print(f"Created in {year}")
+pymd.text(f"Welcome to **{name}** v{version}!")
+pymd.text(f"Created in {year}")
 ```
 
 The variables we just defined are available in subsequent code blocks:
 
 ```
-print(f"Confirming: We're using {name} version {version}")
+pymd.text(f"Confirming: We're using **{name}** version **{version}**")
 
 # Let's do some calculations
 numbers = [1, 2, 3, 4, 5]
 total = sum(numbers)
 average = total / len(numbers)
 
-print(f"Numbers: {numbers}")
-print(f"Sum: {total}")
-print(f"Average: {average}")
+pymd.text(f"Numbers: {numbers}")
+pymd.text(f"Sum: **{total}**")
+pymd.text(f"Average: **{average}**")
 ```
 
 ## Data Analysis with Pandas
@@ -56,7 +56,7 @@ for product in products:
         data.append({'Product': product, 'Month': month, 'Sales': sales})
 
 df = pd.DataFrame(data)
-print("Sample Sales Data:")
+pymd.text("**Sample Sales Data:**")
 pymd.table(df.head(10))
 ```
 
@@ -65,12 +65,12 @@ Let's analyze this data:
 ```
 # Calculate total sales by product
 product_totals = df.groupby('Product')['Sales'].sum().sort_values(ascending=False)
-print("Total Sales by Product:")
+pymd.text("**Total Sales by Product:**")
 for product, sales in product_totals.items():
-    print(f"  {product}: ${sales:,}")
+    pymd.text(f"  {product}: **${sales:,}**")
 
-print(f"\nBest performing product: {product_totals.index[0]}")
-print(f"Total sales across all products: ${product_totals.sum():,}")
+pymd.text(f"**Best performing product:** {product_totals.index[0]}")
+pymd.text(f"**Total sales across all products:** ${product_totals.sum():,}")
 ```
 
 ## Data Visualization
@@ -137,17 +137,16 @@ def analyze_product_performance(df, product_name):
     return stats
 
 # Analyze each product
-print("Detailed Product Analysis:")
-print("=" * 50)
+pymd.h2("Detailed Product Analysis")
 
 for product in products:
     stats = analyze_product_performance(df, product)
-    print(f"\n{product}:")
-    print(f"  Total Sales: ${stats['total_sales']:,}")
-    print(f"  Monthly Average: ${stats['avg_monthly']:.0f}")
-    print(f"  Best Month: {stats['best_month']}")
-    print(f"  Worst Month: {stats['worst_month']}")
-    print(f"  Consistency (std dev): ${stats['consistency']:.2f}")
+    pymd.h3(product)
+    pymd.text(f"Total Sales: **${stats['total_sales']:,}**")
+    pymd.text(f"Monthly Average: **${stats['avg_monthly']:.0f}**")
+    pymd.text(f"Best Month: **{stats['best_month']}**")
+    pymd.text(f"Worst Month: **{stats['worst_month']}**")
+    pymd.text(f"Consistency (std dev): **${stats['consistency']:.2f}**")
 ```
 
 ## Code Display Feature
@@ -179,7 +178,7 @@ def is_prime(num):
 '''
 
 pymd.code(algorithm_code, "python")
-print("Algorithm examples displayed above (not executed)")
+pymd.text("**Algorithm examples displayed above (not executed)**")
 ```
 
 Now let's actually use one of those functions:
@@ -190,14 +189,14 @@ exec(algorithm_code)  # This makes the functions available
 
 # Generate fibonacci sequence
 fib_sequence = fibonacci(10)
-print(f"First 10 Fibonacci numbers: {fib_sequence}")
+pymd.text(f"First 10 Fibonacci numbers: **{fib_sequence}**")
 
 # Check some numbers for primality
 test_numbers = [17, 25, 29, 35, 41]
-print("\nPrime number check:")
+pymd.text("**Prime number check:**")
 for num in test_numbers:
     result = "prime" if is_prime(num) else "not prime"
-    print(f"  {num} is {result}")
+    pymd.text(f"  {num} is **{result}**")
 ```
 
 ## PyMD Helper Functions
@@ -241,11 +240,11 @@ You can seamlessly mix markdown content with code blocks. This makes documentati
 # Real-time updates
 import datetime
 current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-print(f"Document last executed: {current_time}")
+pymd.text(f"Document last executed: **{current_time}**")
 
 # You can modify this code and see results update immediately
 message = "Try changing this message and saving the file!"
-print(message)
+pymd.text(f"**Message:** {message}")
 ```
 
 ## Conclusion
@@ -262,14 +261,14 @@ This example demonstrates PyMD's powerful features:
 ```
 # Final message
 success_message = "🎉 PyMD makes technical documentation beautiful and interactive!"
-print(success_message)
+pymd.text(f"**Success Message:** {success_message}")
 
 # Show some final stats
-print(f"\nDocument stats:")
-print(f"- Data points analyzed: {len(df)}")
-print(f"- Visualizations created: 2")
-print(f"- Functions defined: 3")
-print(f"- Variables available: {len([var for var in globals() if not var.startswith('_')])}")
+pymd.h3("Document Stats")
+pymd.text(f"- Data points analyzed: **{len(df)}**")
+pymd.text(f"- Visualizations created: **2**")
+pymd.text(f"- Functions defined: **3**")
+pymd.text(f"- Variables available: **{len([var for var in globals() if not var.startswith('_')])}**")
 ```
 
 That's PyMD in action! Try modifying the code blocks above and watch the results update in real-time with the live preview server.

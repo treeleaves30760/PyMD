@@ -67,11 +67,18 @@ class PyMD:
         return html
 
     def text(self, content: str) -> str:
-        """Create paragraph text"""
-        html = f'<p>{content}</p>'
+        """Create paragraph text with bold text support"""
+        # Process bold text (**text**)
+        processed_content = self._process_bold_text(content)
+        html = f'<p>{processed_content}</p>'
         if self.renderer:
             self.renderer.add_element('text', content, html)
         return html
+    
+    def _process_bold_text(self, text: str) -> str:
+        """Process **bold** syntax in text"""
+        # Replace **text** with <strong>text</strong>
+        return re.sub(r'\*\*(.*?)\*\*', r'<strong>\1</strong>', text)
 
     def code(self, content: str, language: str = 'python') -> str:
         """Create code block"""
@@ -194,6 +201,11 @@ class PyMDRenderer:
             self.add_element('image', f'Error: {str(e)}', error_html)
             return error_html
 
+    def _process_bold_text_in_content(self, text: str) -> str:
+        """Process **bold** syntax in content text"""
+        # Replace **text** with <strong>text</strong>
+        return re.sub(r'\*\*(.*?)\*\*', r'<strong>\1</strong>', text)
+
     def render_table(self, data) -> str:
         """Render pandas DataFrame or other tabular data"""
         try:
@@ -288,7 +300,8 @@ class PyMDRenderer:
 
                 if level > 0 and level <= 6 and stripped_line[level:].strip():
                     header_text = stripped_line[level:].strip()
-                    header_html = f'<h{level}>{header_text}</h{level}>'
+                    processed_header = self._process_bold_text_in_content(header_text)
+                    header_html = f'<h{level}>{processed_header}</h{level}>'
                     self.add_element(f'h{level}', header_text, header_html)
                     i += 1
                     continue
@@ -312,9 +325,10 @@ class PyMDRenderer:
                         break
 
                 if list_items:
+                    processed_items = [self._process_bold_text_in_content(item) for item in list_items]
                     ul_html = '<ul>' + \
                         ''.join(
-                            f'<li>{item}</li>' for item in list_items) + '</ul>'
+                            f'<li>{item}</li>' for item in processed_items) + '</ul>'
                     self.add_element('ul', list_items, ul_html)
                 continue
 
@@ -334,14 +348,16 @@ class PyMDRenderer:
                         break
 
                 if list_items:
+                    processed_items = [self._process_bold_text_in_content(item) for item in list_items]
                     ol_html = '<ol>' + \
                         ''.join(
-                            f'<li>{item}</li>' for item in list_items) + '</ol>'
+                            f'<li>{item}</li>' for item in processed_items) + '</ol>'
                     self.add_element('ol', list_items, ol_html)
                 continue
 
             # Handle plain text (everything else outside code blocks)
-            text_html = f'<p>{stripped_line}</p>'
+            processed_text = self._process_bold_text_in_content(stripped_line)
+            text_html = f'<p>{processed_text}</p>'
             self.add_element('text', stripped_line, text_html)
             i += 1
 
@@ -394,6 +410,11 @@ class PyMDRenderer:
         
         p {{
             margin-bottom: 16px;
+        }}
+        
+        strong {{
+            font-weight: 600;
+            color: #333;
         }}
         
         pre {{

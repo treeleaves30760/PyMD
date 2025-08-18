@@ -74,6 +74,7 @@ PyMD combines familiar markdown syntax with Python code execution:
 ### Markdown Content (Outside Code Blocks)
 
 **Headers:**
+
 ```markdown
 # Main Title
 ## Section Title
@@ -81,6 +82,7 @@ PyMD combines familiar markdown syntax with Python code execution:
 ```
 
 **Lists:**
+
 ```markdown
 - Unordered list item
 - Another unordered item
@@ -90,12 +92,14 @@ PyMD combines familiar markdown syntax with Python code execution:
 ```
 
 **Plain Text:**
+
 ```markdown
 This is a paragraph of regular text.
 You can write multiple paragraphs easily.
 ```
 
 **Comments:**
+
 ```markdown
 // This is a comment and will be ignored
 ```
@@ -103,21 +107,24 @@ You can write multiple paragraphs easily.
 ### Python Code Execution (Inside ``` Blocks)
 
 **Simple Code Execution:**
-```markdown
+
+````markdown
 ```
 x = 42
 y = "Hello, PyMD!"
 print(f"{y} The answer is {x}")
 ```
-```
+````
 
 **Data Analysis:**
-```markdown
+
+````markdown
 ```
 import pandas as pd
 import numpy as np
 
 # Create sample data
+
 data = pd.DataFrame({
     'Name': ['Alice', 'Bob', 'Charlie'],
     'Score': [95, 87, 92]
@@ -126,10 +133,11 @@ data = pd.DataFrame({
 print("Sample Data:")
 pymd.table(data)
 ```
-```
+````
 
 **Visualizations:**
-```markdown
+
+````markdown
 ```
 import matplotlib.pyplot as plt
 
@@ -143,10 +151,11 @@ plt.grid(True)
 
 pymd.image(plt.gcf(), "Beautiful sine wave")
 ```
-```
+````
 
 **Code Display:**
-```markdown
+
+````markdown
 ```
 sample_code = '''
 def factorial(n):
@@ -158,7 +167,7 @@ def factorial(n):
 pymd.code(sample_code, "python")
 print(f"Factorial of 5 is: {factorial(5)}")
 ```
-```
+````
 
 ### Key Features
 
