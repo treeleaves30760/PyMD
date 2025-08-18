@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-PyMD Test Script
-Quick test to verify PyMD installation and basic functionality
+PyExecMD Test Script
+Quick test to verify PyExecMD installation and basic functionality
 """
 
 import sys
@@ -10,14 +10,14 @@ from pymd.renderer import PyMDRenderer
 
 
 def test_basic_rendering():
-    """Test basic PyMD rendering functionality"""
-    print("🧪 Testing PyMD Basic Rendering...")
+    """Test basic PyExecMD rendering functionality"""
+    print("🧪 Testing PyExecMD Basic Rendering...")
 
     # Simple test content
     test_content = '''
 ```
 pymd.h1("Test Document")
-pymd.text("This is a test of PyMD rendering.")
+pymd.text("This is a test of PyExecMD rendering.")
 
 pymd.h2("Math Test")
 result = 2 + 2
@@ -138,8 +138,8 @@ def test_cli_availability():
 
 
 def run_all_tests():
-    """Run all PyMD tests"""
-    print("🐍 PyMD Test Suite")
+    """Run all PyExecMD tests"""
+    print("🐍 PyExecMD Test Suite")
     print("=" * 50)
 
     tests = [
@@ -161,10 +161,10 @@ def run_all_tests():
     print(f"📊 Test Results: {passed}/{total} tests passed")
 
     if passed == total:
-        print("🎉 All tests passed! PyMD is ready to use!")
+        print("🎉 All tests passed! PyExecMD is ready to use!")
         print("\n🚀 Quick start:")
-        print("   python pymd_cli.py create my_document.pymd")
-        print("   python pymd_cli.py serve my_document.pymd")
+        print("   pyexecmd create my_document.pymd")
+        print("   pyexecmd serve my_document.pymd")
         return True
     else:
         print("⚠️  Some tests failed. Please check your installation.")

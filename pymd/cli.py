@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-PyMD Command Line Interface
-Render PyMD files to HTML and start live preview servers
+PyExecMD Command Line Interface
+Render PyExecMD files to HTML and start live preview servers
 """
 
 import argparse
@@ -12,7 +12,7 @@ from .server import PyMDServer
 
 
 def render_command(args):
-    """Render a PyMD file to HTML"""
+    """Render a PyExecMD file to HTML"""
     renderer = PyMDRenderer()
 
     if not os.path.exists(args.input):
@@ -64,17 +64,17 @@ def serve_command(args):
 
 
 def create_command(args):
-    """Create a new PyMD file with template content"""
+    """Create a new PyExecMD file with template content"""
     if os.path.exists(args.filename) and not args.force:
         print(
             f"Error: File '{args.filename}' already exists. Use --force to overwrite.")
         return 1
 
     template_content = '''```
-# Welcome to PyMD!
-pymd.h1("My First PyMD Document")
+# Welcome to PyExecMD!
+pymd.h1("My First PyExecMD Document")
 
-pymd.text("PyMD is a Python-based markup language that lets you create documents with executable code!")
+pymd.text("PyExecMD is a Python-based markup language that lets you create documents with executable code!")
 
 pymd.h2("Basic Text")
 pymd.text(
@@ -118,7 +118,7 @@ df = pd.DataFrame({
 pymd.table(df)
 
 pymd.h2("Interactive Content")
-pymd.text("Since PyMD executes Python code, you can create dynamic content:")
+pymd.text("Since PyExecMD executes Python code, you can create dynamic content:")
 
 # Calculate some statistics
 mean_score = df['Score'].mean()
@@ -146,7 +146,7 @@ print([fibonacci(i) for i in range(10)])
 pymd.code(sample_code, "python")
 
 pymd.h2("Conclusion")
-pymd.text("This is just the beginning! PyMD combines the simplicity of Markdown with the power of Python.")
+pymd.text("This is just the beginning! PyExecMD combines the simplicity of Markdown with the power of Python.")
 pymd.text("Happy coding! 🐍✨")
 ```'''
 
@@ -154,9 +154,9 @@ pymd.text("Happy coding! 🐍✨")
         with open(args.filename, 'w', encoding='utf-8') as f:
             f.write(template_content)
 
-        print(f"✅ Created new PyMD file: {args.filename}")
-        print(f"💡 To preview: pymd serve {args.filename}")
-        print(f"💡 To render: pymd render {args.filename} -o output.html")
+        print(f"✅ Created new PyExecMD file: {args.filename}")
+        print(f"💡 To preview: pyexecmd serve {args.filename}")
+        print(f"💡 To render: pyexecmd render {args.filename} -o output.html")
 
         return 0
 
@@ -168,8 +168,8 @@ pymd.text("Happy coding! 🐍✨")
 def main():
     """Main CLI entry point"""
     parser = argparse.ArgumentParser(
-        description='PyMD - Python-based Markdown with executable code',
-        prog='pymd'
+        description='PyExecMD - Python-based Markdown with executable code',
+        prog='pyexecmd'
     )
 
     subparsers = parser.add_subparsers(
@@ -177,8 +177,8 @@ def main():
 
     # Render command
     render_parser = subparsers.add_parser(
-        'render', help='Render PyMD file to HTML')
-    render_parser.add_argument('input', help='Input PyMD file')
+        'render', help='Render PyExecMD file to HTML')
+    render_parser.add_argument('input', help='Input PyExecMD file')
     render_parser.add_argument(
         '-o', '--output', help='Output HTML file (default: print to stdout)')
     render_parser.set_defaults(func=render_command)
@@ -186,7 +186,7 @@ def main():
     # Serve command
     serve_parser = subparsers.add_parser(
         'serve', help='Start live preview server')
-    serve_parser.add_argument('file', help='PyMD file to serve')
+    serve_parser.add_argument('file', help='PyExecMD file to serve')
     serve_parser.add_argument('-p', '--port', type=int,
                               default=5000, help='Port (default: 5000)')
     serve_parser.add_argument(
@@ -202,8 +202,9 @@ def main():
 
     # Create command
     create_parser = subparsers.add_parser(
-        'create', help='Create new PyMD file from template')
-    create_parser.add_argument('filename', help='Name of the new PyMD file')
+        'create', help='Create new PyExecMD file from template')
+    create_parser.add_argument(
+        'filename', help='Name of the new PyExecMD file')
     create_parser.add_argument(
         '-f', '--force', action='store_true', help='Overwrite existing file')
     create_parser.set_defaults(func=create_command)

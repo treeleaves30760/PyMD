@@ -1,6 +1,6 @@
 """
-PyMD Live Preview Server
-Provides real-time rendering of PyMD files with auto-refresh
+PyExecMD Live Preview Server
+Provides real-time rendering of PyExecMD files with auto-refresh
 """
 
 import os
@@ -15,7 +15,7 @@ import argparse
 
 
 class PyMDFileHandler(FileSystemEventHandler):
-    """File system event handler for watching PyMD files"""
+    """File system event handler for watching PyExecMD files"""
 
     def __init__(self, socketio, file_path):
         self.socketio = socketio
@@ -58,7 +58,7 @@ class PyMDFileHandler(FileSystemEventHandler):
 
 
 class PyMDServer:
-    """Live preview server for PyMD files"""
+    """Live preview server for PyExecMD files"""
 
     def __init__(self, file_path, port=5000, host='localhost'):
         self.file_path = os.path.abspath(file_path)
@@ -98,7 +98,7 @@ class PyMDServer:
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PyMD Live Preview - {{ filename }}</title>
+    <title>PyExecMD Live Preview - {{ filename }}</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <style>
         body {
@@ -247,9 +247,9 @@ class PyMDServer:
     <div class="live-indicator" id="liveIndicator">🟢 Live</div>
     
     <div class="header">
-        <h1>PyMD Live Preview</h1>
+        <h1>PyExecMD Live Preview</h1>
         <p>File: <strong>{{ filename }}</strong></p>
-        <p>Auto-refreshing preview of your PyMD document</p>
+        <p>Auto-refreshing preview of your PyExecMD document</p>
     </div>
     
     <div id="content">
@@ -321,7 +321,7 @@ class PyMDServer:
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PyMD Error</title>
+    <title>PyExecMD Error</title>
     <style>
         body {{ font-family: Arial, sans-serif; margin: 40px; }}
         .error {{ background: #ffebee; border: 1px solid #f44336; padding: 20px; border-radius: 4px; }}
@@ -336,7 +336,7 @@ class PyMDServer:
 
         @self.app.route('/api/render', methods=['POST'])
         def api_render():
-            """API endpoint for rendering PyMD content"""
+            """API endpoint for rendering PyExecMD content"""
             try:
                 content = request.json.get('content', '')
                 html = self.renderer.parse_and_render(content)
@@ -414,7 +414,7 @@ class PyMDServer:
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PyMD Editor - {filename} - {mode.title()} Mode</title>
+    <title>PyExecMD Editor - {filename} - {mode.title()} Mode</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
     <style>
@@ -644,7 +644,7 @@ class PyMDServer:
 </head>
 <body>
     <div class="header">
-        <h1>PyMD Editor - {filename}</h1>
+        <h1>PyExecMD Editor - {filename}</h1>
         <div class="header-controls">
             <select class="mode-selector" id="modeSelector">
                 <option value="editing" {"selected" if mode == "editing" else ""}>Editing Only</option>
@@ -867,7 +867,7 @@ class PyMDServer:
 
     def run(self, debug=False):
         """Start the live preview server"""
-        print(f"🐍 PyMD Live Preview Server")
+        print(f"🐍 PyExecMD Live Preview Server")
         print(f"📁 File: {self.file_path}")
         print(f"🌐 Server: http://{self.host}:{self.port}")
         print(f"💡 Tip: Edit your .pymd file and see changes instantly!")
@@ -890,9 +890,10 @@ class PyMDServer:
 
 
 def main():
-    """Command line interface for PyMD server"""
-    parser = argparse.ArgumentParser(description='PyMD Live Preview Server')
-    parser.add_argument('file', help='PyMD file to preview')
+    """Command line interface for PyExecMD server"""
+    parser = argparse.ArgumentParser(
+        description='PyExecMD Live Preview Server')
+    parser.add_argument('file', help='PyExecMD file to preview')
     parser.add_argument('--port', '-p', type=int, default=5000,
                         help='Port to run server on (default: 5000)')
     parser.add_argument('--host', default='localhost',

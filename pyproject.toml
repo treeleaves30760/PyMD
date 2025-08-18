@@ -3,16 +3,16 @@ requires = ["setuptools>=77.0.3", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "py-md"
+name = "pyexecmd"
 version = "0.1.0"
 description = "Python-Powered Markdown with executable code and dynamic content"
 readme = "README.md"
 license = {text = "MIT"}
 authors = [
-    {name = "Py-MD Team"}
+    {name = "PyExecMD Team"}
 ]
 maintainers = [
-    {name = "Py-MD Team"}
+    {name = "PyExecMD Team"}
 ]
 keywords = ["markdown", "python", "documentation", "jupyter", "notebook"]
 classifiers = [
@@ -56,7 +56,7 @@ dev = [
 "Source" = "https://github.com/treeleaves30760/PyMD"
 
 [project.scripts]
-py-md = "py-md.cli:main"
+pyexecmd = "pymd.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["."]

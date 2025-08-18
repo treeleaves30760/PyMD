@@ -1,6 +1,6 @@
-# Py-MD: Python-Powered Markdown
+# PyExecMD: Python-Powered Markdown
 
-Py-MD is a revolutionary markup language that combines the simplicity of Markdown with the full power of Python. Write documents with executable code, dynamic content, and beautiful visualizations that update in real-time!
+PyExecMD is a revolutionary markup language that combines the simplicity of Markdown with the full power of Python. Write documents with executable code, dynamic content, and beautiful visualizations that update in real-time!
 
 ## ✨ Features
 
@@ -19,7 +19,7 @@ Py-MD is a revolutionary markup language that combines the simplicity of Markdow
 **Option 1: Install from PyPI (Recommended)**
 
 ```bash
-pip install py-md
+pip install pyexecmd
 ```
 
 **Option 2: Install from source**
@@ -40,21 +40,21 @@ pip install py-md
 ### Quick Test
 
 ```bash
-pymd serve example.pymd --port 8000
+pyexecmd serve example.pymd --port 8000
 ```
 
 ### Basic Usage
 
-1. **Create a new PyMD document:**
+1. **Create a new PyExecMD document:**
 
    ```bash
-   pymd create my_document.pymd
+   pyexecmd create my_document.pymd
    ```
 
 2. **Start live preview:**
 
    ```bash
-   pymd serve my_document.pymd --port 8000
+   pyexecmd serve my_document.pymd --port 8000
    ```
 
    Then open <http://localhost:8000> in your browser
@@ -64,12 +64,12 @@ pymd serve example.pymd --port 8000
 3. **Render to HTML:**
 
    ```bash
-   pymd render my_document.pymd -o output.html
+   pyexecmd render my_document.pymd -o output.html
    ```
 
-## 📝 Py-MD Syntax
+## 📝 PyExecMD Syntax
 
-Py-MD uses Python function calls to create content:
+PyExecMD uses Python function calls to create content:
 
 ### Headings
 
@@ -91,7 +91,7 @@ pymd.text("You can write **bold** and *italic* text too!")
 ```python
 code_sample = '''
 def hello_world():
-    print("Hello, PyMD!")
+    print("Hello, PyExecMD!")
 '''
 pymd.code(code_sample, "python")
 ```
@@ -145,7 +145,7 @@ PyMD/
 
 ## 🛠️ API Reference
 
-### Py-MD Class Methods
+### PyExecMD Class Methods
 
 - `pymd.h1(text)` - Create level 1 heading
 - `pymd.h2(text)` - Create level 2 heading
@@ -158,14 +158,14 @@ PyMD/
 ### CLI Commands
 
 ```bash
-# Create new PyMD file from template
-pymd create <filename> [--force]
+# Create new PyExecMD file from template
+pyexecmd create <filename> [--force]
 
 # Start live preview server
-pymd serve <file> [--port PORT] [--host HOST] [--debug]
+pyexecmd serve <file> [--port PORT] [--host HOST] [--debug]
 
-# Render PyMD to HTML
-pymd render <input> [-o OUTPUT]
+# Render PyExecMD to HTML
+pyexecmd render <input> [-o OUTPUT]
 ```
 
 ## 🎯 Use Cases
@@ -178,7 +178,7 @@ pymd render <input> [-o OUTPUT]
 
 ## 🌟 Examples
 
-Check out `example.pymd` for a comprehensive demonstration of Py-MD features, including:
+Check out `example.pymd` for a comprehensive demonstration of PyExecMD features, including:
 
 - Beautiful data visualizations
 - Dynamic calculations

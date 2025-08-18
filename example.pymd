@@ -1,8 +1,8 @@
 ```
-# Py-MD Example Document
-pymd.h1("🐍 Py-MD Demonstration")
+# PyExecMD Example Document
+pymd.h1("🐍 PyExecMD Demonstration")
 
-pymd.text("Welcome to Py-MD! This document showcases the capabilities of this Python-based markup language.")
+pymd.text("Welcome to PyExecMD! This document showcases the capabilities of this Python-based markup language.")
 
 pymd.h2("🎯 Basic Features")
 
@@ -14,8 +14,8 @@ pymd.h3("Code Display")
 pymd.text("You can display code blocks with syntax highlighting:")
 
 sample_code = '''def hello_world():
-    print("Hello from Py-MD!")
-    return "Py-MD rocks!"
+    print("Hello from PyExecMD!")
+    return "PyExecMD rocks!"
 
 result = hello_world()'''
 
@@ -80,7 +80,7 @@ pymd.image(plt.gcf(), "Scatter plot showing the relationship between temperature
 
 pymd.h2("📋 Data Tables")
 
-pymd.text("Py-MD can beautifully render pandas DataFrames and other tabular data:")
+pymd.text("PyExecMD can beautifully render pandas DataFrames and other tabular data:")
 
 # Create a sample dataset
 weather_data = pd.DataFrame({
@@ -95,7 +95,7 @@ pymd.table(weather_data)
 
 pymd.h2("🧮 Dynamic Calculations")
 
-pymd.text("Since Py-MD executes Python code, you can perform calculations and display results dynamically:")
+pymd.text("Since PyexecMD executes Python code, you can perform calculations and display results dynamically:")
 
 # Calculate statistics
 avg_temp = np.mean(temperature)
@@ -177,7 +177,7 @@ pymd.image(plt.gcf(), "Comprehensive weather data dashboard with multiple visual
 
 pymd.h2("🔄 Live Updates")
 
-pymd.text("One of the most powerful features of PyMD is that when you save this file, the content updates automatically!")
+pymd.text("One of the most powerful features of PyExecMD is that when you save this file, the content updates automatically!")
 
 pymd.text("Try editing this file and watch the live preview update in real-time.")
 
@@ -187,25 +187,25 @@ pymd.text(f"**Last updated:** {current_time}")
 
 pymd.h2("🚀 Getting Started")
 
-pymd.text("To start using PyMD:")
+pymd.text("To start using PyExecMD:")
 
 setup_instructions = '''# Install dependencies
 pip install -r requirements.txt
 
-# Create a new PyMD file
-python pymd_cli.py create my_document.pymd
+# Create a new PyExecMD file
+pyexecmd create my_document.pymd
 
 # Start live preview
-python pymd_cli.py serve my_document.pymd
+pyexecmd serve my_document.pymd
 
 # Or render to HTML
-python pymd_cli.py render my_document.pymd -o output.html'''
+pyexecmd render my_document.pymd -o output.html'''
 
 pymd.code(setup_instructions, "bash")
 
 pymd.h2("✨ Conclusion")
 
-pymd.text("Py-MD combines the best of both worlds:")
+pymd.text("PyExecMD combines the best of both worlds:")
 pymd.text("• **Simplicity** of Markdown")
 pymd.text("• **Power** of Python")
 pymd.text("• **Live rendering** for immediate feedback")
@@ -213,5 +213,5 @@ pymd.text("• **Rich visualizations** with matplotlib, pandas, and more")
 
 pymd.text("Perfect for data science reports, documentation, tutorials, and interactive documents!")
 
-pymd.text("Happy coding with Py-MD! 🐍📝✨")
+pymd.text("Happy coding with PyExecMD! 🐍📝✨")
 ```
