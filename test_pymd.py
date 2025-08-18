@@ -6,7 +6,7 @@ Quick test to verify PyMD installation and basic functionality
 
 import sys
 import os
-from pymd_renderer import PyMDRenderer
+from pymd.renderer import PyMDRenderer
 
 
 def test_basic_rendering():

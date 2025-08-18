@@ -16,6 +16,14 @@ PyMD is a revolutionary markup language that combines the simplicity of Markdown
 
 ### Installation
 
+**Option 1: Install from PyPI (Recommended)**
+
+```bash
+pip install pymd
+```
+
+**Option 2: Install from source**
+
 1. **Clone the repository:**
 
    ```bash
@@ -23,16 +31,16 @@ PyMD is a revolutionary markup language that combines the simplicity of Markdown
    cd PyMD
    ```
 
-2. **Install dependencies:**
+2. **Install in development mode:**
 
    ```bash
-   pip install -r requirements.txt
+   pip install -e .
    ```
 
 ### Quick Test
 
 ```bash
-python pymd_cli.py serve example.pymd --port 8000
+pymd serve example.pymd --port 8000
 ```
 
 ### Basic Usage
@@ -40,13 +48,13 @@ python pymd_cli.py serve example.pymd --port 8000
 1. **Create a new PyMD document:**
 
    ```bash
-   python pymd_cli.py create my_document.pymd
+   pymd create my_document.pymd
    ```
 
 2. **Start live preview:**
 
    ```bash
-   python pymd_cli.py serve my_document.pymd --port 8000
+   pymd serve my_document.pymd --port 8000
    ```
 
    Then open <http://localhost:8000> in your browser
@@ -56,7 +64,7 @@ python pymd_cli.py serve example.pymd --port 8000
 3. **Render to HTML:**
 
    ```bash
-   python pymd_cli.py render my_document.pymd -o output.html
+   pymd render my_document.pymd -o output.html
    ```
 
 ## 📝 PyMD Syntax
@@ -120,14 +128,19 @@ pymd.table(df)
 
 ## 📁 Project Structure
 
-```list
+```
 PyMD/
-├── pymd_renderer.py    # Core rendering engine
-├── pymd_server.py      # Live preview server
-├── pymd_cli.py         # Command-line interface
-├── example.pymd        # Example PyMD document
-├── requirements.txt    # Python dependencies
-└── README.md          # This file
+├── pymd/                   # Main package directory
+│   ├── __init__.py        # Package initialization
+│   ├── cli.py             # Command-line interface
+│   ├── renderer.py        # Core rendering engine
+│   └── server.py          # Live preview server
+├── example.pymd           # Example PyMD document
+├── pyproject.toml         # Package configuration
+├── MANIFEST.in            # Additional files to include
+├── LICENSE                # MIT License
+├── requirements.txt       # Python dependencies
+└── README.md              # This file
 ```
 
 ## 🛠️ API Reference
@@ -146,13 +159,13 @@ PyMD/
 
 ```bash
 # Create new PyMD file from template
-python pymd_cli.py create <filename> [--force]
+pymd create <filename> [--force]
 
 # Start live preview server
-python pymd_cli.py serve <file> [--port PORT] [--host HOST] [--debug]
+pymd serve <file> [--port PORT] [--host HOST] [--debug]
 
 # Render PyMD to HTML
-python pymd_cli.py render <input> [-o OUTPUT]
+pymd render <input> [-o OUTPUT]
 ```
 
 ## 🎯 Use Cases

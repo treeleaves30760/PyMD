@@ -9,7 +9,7 @@ from flask import Flask, render_template_string, request, jsonify, send_from_dir
 from flask_socketio import SocketIO, emit
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-from pymd_renderer import PyMDRenderer
+from .renderer import PyMDRenderer
 import threading
 import argparse
 

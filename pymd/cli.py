@@ -7,8 +7,8 @@ Render PyMD files to HTML and start live preview servers
 import argparse
 import os
 import sys
-from pymd_renderer import PyMDRenderer
-from pymd_server import PyMDServer
+from .renderer import PyMDRenderer
+from .server import PyMDServer
 
 
 def render_command(args):
