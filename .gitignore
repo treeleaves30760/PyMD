@@ -8,3 +8,7 @@ __pycache__/
 *.pyzw
 *.pyzwz
 *.pyzwzw
+
+dist/
+
+*.egg-info/
