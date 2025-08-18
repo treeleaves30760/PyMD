@@ -1,0 +1,217 @@
+```
+# PyMD Example Document
+pymd.h1("🐍 PyMD Demonstration")
+
+pymd.text("Welcome to PyMD! This document showcases the capabilities of this Python-based markup language.")
+
+pymd.h2("🎯 Basic Features")
+
+pymd.h3("Text and Headings")
+pymd.text("You can create rich text content using simple Python function calls.")
+pymd.text("This approach gives you the power of Python while maintaining the simplicity of markup languages.")
+
+pymd.h3("Code Display")
+pymd.text("You can display code blocks with syntax highlighting:")
+
+sample_code = '''def hello_world():
+    print("Hello from PyMD!")
+    return "PyMD rocks!"
+
+result = hello_world()'''
+
+pymd.code(sample_code, "python")
+
+pymd.h2("📊 Data Visualization")
+
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+
+pymd.text("Let's create some interesting visualizations with real data:")
+
+# Generate sample data
+np.random.seed(42)
+days = np.arange(1, 31)
+temperature = 20 + 10 * np.sin(days * 0.2) + np.random.normal(0, 2, 30)
+humidity = 60 + 20 * np.cos(days * 0.15) + np.random.normal(0, 5, 30)
+
+# Create a beautiful plot
+plt.style.use('seaborn-v0_8')
+fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8))
+
+# Temperature plot
+ax1.plot(days, temperature, 'o-', color='#e74c3c', linewidth=2, markersize=6, label='Temperature')
+ax1.set_title('Daily Temperature', fontsize=14, fontweight='bold')
+ax1.set_ylabel('Temperature (°C)')
+ax1.grid(True, alpha=0.3)
+ax1.legend()
+
+# Humidity plot
+ax2.plot(days, humidity, 's-', color='#3498db', linewidth=2, markersize=6, label='Humidity')
+ax2.set_title('Daily Humidity', fontsize=14, fontweight='bold')
+ax2.set_xlabel('Day of Month')
+ax2.set_ylabel('Humidity (%)')
+ax2.grid(True, alpha=0.3)
+ax2.legend()
+
+plt.tight_layout()
+pymd.image(plt.gcf(), "Weather data visualization showing temperature and humidity over 30 days")
+
+pymd.h2("📈 Advanced Plotting")
+
+pymd.text("Let's create a more complex visualization with multiple data series:")
+
+# Create correlation plot
+plt.figure(figsize=(10, 6))
+plt.scatter(temperature, humidity, c=days, cmap='viridis', s=100, alpha=0.7, edgecolors='black')
+plt.colorbar(label='Day of Month')
+plt.xlabel('Temperature (°C)')
+plt.ylabel('Humidity (%)')
+plt.title('Temperature vs Humidity Correlation', fontsize=14, fontweight='bold')
+
+# Add trend line
+z = np.polyfit(temperature, humidity, 1)
+p = np.poly1d(z)
+plt.plot(temperature, p(temperature), "r--", alpha=0.8, linewidth=2, label=f'Trend: y = {z[0]:.2f}x + {z[1]:.2f}')
+plt.legend()
+plt.grid(True, alpha=0.3)
+
+pymd.image(plt.gcf(), "Scatter plot showing the relationship between temperature and humidity")
+
+pymd.h2("📋 Data Tables")
+
+pymd.text("PyMD can beautifully render pandas DataFrames and other tabular data:")
+
+# Create a sample dataset
+weather_data = pd.DataFrame({
+    'Day': days[:10],
+    'Temperature (°C)': np.round(temperature[:10], 1),
+    'Humidity (%)': np.round(humidity[:10], 1),
+    'Weather': np.random.choice(['Sunny', 'Cloudy', 'Rainy'], 10),
+    'Wind Speed (km/h)': np.round(np.random.uniform(5, 25, 10), 1)
+})
+
+pymd.table(weather_data)
+
+pymd.h2("🧮 Dynamic Calculations")
+
+pymd.text("Since PyMD executes Python code, you can perform calculations and display results dynamically:")
+
+# Calculate statistics
+avg_temp = np.mean(temperature)
+max_temp = np.max(temperature)
+min_temp = np.min(temperature)
+temp_range = max_temp - min_temp
+
+pymd.text(f"**Temperature Statistics:**")
+pymd.text(f"• Average temperature: {avg_temp:.1f}°C")
+pymd.text(f"• Maximum temperature: {max_temp:.1f}°C")
+pymd.text(f"• Minimum temperature: {min_temp:.1f}°C")
+pymd.text(f"• Temperature range: {temp_range:.1f}°C")
+
+# Humidity statistics
+avg_humidity = np.mean(humidity)
+pymd.text(f"\n**Humidity Statistics:**")
+pymd.text(f"• Average humidity: {avg_humidity:.1f}%")
+
+# Correlation
+correlation = np.corrcoef(temperature, humidity)[0, 1]
+pymd.text(f"\n**Correlation:**")
+pymd.text(f"• Temperature-Humidity correlation: {correlation:.3f}")
+
+pymd.h2("🎨 Custom Visualizations")
+
+pymd.text("Let's create a beautiful dashboard-style visualization:")
+
+# Create a subplot grid
+fig = plt.figure(figsize=(15, 10))
+gs = fig.add_gridspec(3, 3, hspace=0.3, wspace=0.3)
+
+# Main temperature time series
+ax1 = fig.add_subplot(gs[0, :])
+ax1.plot(days, temperature, 'o-', color='#e74c3c', linewidth=3, markersize=8)
+ax1.fill_between(days, temperature, alpha=0.3, color='#e74c3c')
+ax1.set_title('Temperature Over Time', fontsize=16, fontweight='bold')
+ax1.set_ylabel('Temperature (°C)')
+ax1.grid(True, alpha=0.3)
+
+# Temperature histogram
+ax2 = fig.add_subplot(gs[1, 0])
+ax2.hist(temperature, bins=10, color='#e74c3c', alpha=0.7, edgecolor='black')
+ax2.set_title('Temperature Distribution')
+ax2.set_xlabel('Temperature (°C)')
+ax2.set_ylabel('Frequency')
+
+# Humidity histogram
+ax3 = fig.add_subplot(gs[1, 1])
+ax3.hist(humidity, bins=10, color='#3498db', alpha=0.7, edgecolor='black')
+ax3.set_title('Humidity Distribution')
+ax3.set_xlabel('Humidity (%)')
+ax3.set_ylabel('Frequency')
+
+# Box plots
+ax4 = fig.add_subplot(gs[1, 2])
+ax4.boxplot([temperature, humidity], labels=['Temp', 'Humidity'])
+ax4.set_title('Data Distribution')
+ax4.set_ylabel('Values')
+
+# Correlation heatmap data
+corr_data = np.array([[1.0, correlation], [correlation, 1.0]])
+ax5 = fig.add_subplot(gs[2, :])
+im = ax5.imshow(corr_data, cmap='coolwarm', vmin=-1, vmax=1)
+ax5.set_xticks([0, 1])
+ax5.set_yticks([0, 1])
+ax5.set_xticklabels(['Temperature', 'Humidity'])
+ax5.set_yticklabels(['Temperature', 'Humidity'])
+ax5.set_title('Correlation Matrix')
+
+# Add correlation values to heatmap
+for i in range(2):
+    for j in range(2):
+        text = ax5.text(j, i, f'{corr_data[i, j]:.3f}', 
+                       ha="center", va="center", color="white", fontweight='bold')
+
+plt.colorbar(im, ax=ax5)
+
+pymd.image(plt.gcf(), "Comprehensive weather data dashboard with multiple visualizations")
+
+pymd.h2("🔄 Live Updates")
+
+pymd.text("One of the most powerful features of PyMD is that when you save this file, the content updates automatically!")
+
+pymd.text("Try editing this file and watch the live preview update in real-time.")
+
+import datetime
+current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+pymd.text(f"**Last updated:** {current_time}")
+
+pymd.h2("🚀 Getting Started")
+
+pymd.text("To start using PyMD:")
+
+setup_instructions = '''# Install dependencies
+pip install -r requirements.txt
+
+# Create a new PyMD file
+python pymd_cli.py create my_document.pymd
+
+# Start live preview
+python pymd_cli.py serve my_document.pymd
+
+# Or render to HTML
+python pymd_cli.py render my_document.pymd -o output.html'''
+
+pymd.code(setup_instructions, "bash")
+
+pymd.h2("✨ Conclusion")
+
+pymd.text("PyMD combines the best of both worlds:")
+pymd.text("• **Simplicity** of Markdown")
+pymd.text("• **Power** of Python")
+pymd.text("• **Live rendering** for immediate feedback")
+pymd.text("• **Rich visualizations** with matplotlib, pandas, and more")
+
+pymd.text("Perfect for data science reports, documentation, tutorials, and interactive documents!")
+
+pymd.text("Happy coding with PyMD! 🐍📝✨")
+```
