@@ -151,7 +151,9 @@ for product in products:
 
 ## Code Display Feature
 
-Sometimes you want to show code without executing it:
+Sometimes you want to show code without executing it. PyMD provides two ways to display code:
+
+### Method 1: Using the `pymd.code()` function
 
 ```
 # Example algorithm for reference
@@ -166,26 +168,85 @@ def fibonacci(n):
         a, b = b, a + b
     
     return sequence
+'''
+
+pymd.code(algorithm_code, "python")
+pymd.text("**Algorithm example displayed above using pymd.code() (not executed)**")
+```
+
+### Method 2: Using four backticks (````) for display-only blocks
+
+For even cleaner syntax, use four backticks to create display-only code blocks:
+
+````
+def fibonacci(n):
+    // Generate fibonacci sequence up to n terms
+    sequence = []
+    a, b = 0, 1
+    
+    for i in range(n):
+        sequence.append(a)
+        a, b = b, a + b
+    
+    return sequence
 
 def is_prime(num):
-    """Check if a number is prime."""
+    // Check if a number is prime
     if num < 2:
         return False
     for i in range(2, int(num ** 0.5) + 1):
         if num % i == 0:
             return False
     return True
-'''
 
-pymd.code(algorithm_code, "python")
-pymd.text("**Algorithm examples displayed above (not executed)**")
+// Example usage (this won't execute)
+fib_numbers = fibonacci(8)
+prime_check = is_prime(17)
+````
+
+**Key differences:**
+- **Three backticks (```)**: Execute Python code and show output
+- **Four backticks (````)**: Display code with syntax highlighting but don't execute
+- Display-only blocks use `//` for comments (cleaner presentation)
+- Display-only blocks have a **gray background** for easy identification
+
+### Visual Styling Comparison
+
+This shows how code appears when executed:
+```
+# This block executes and shows output
+example_list = [1, 2, 3, 4, 5]
+print(f"Executed: {example_list}")
 ```
 
-Now let's actually use one of those functions:
+This shows how the same code appears as display-only:
+````
+// This block is displayed but not executed
+example_list = [1, 2, 3, 4, 5]
+print(f"Display only: {example_list}")
+````
+
+Notice the different background colors and comment styles!
+
+Now let's actually implement and use those functions:
 
 ```
-# Execute the fibonacci function
-exec(algorithm_code)  # This makes the functions available
+# Implement the fibonacci function
+def fibonacci(n):
+    sequence = []
+    a, b = 0, 1
+    for _ in range(n):
+        sequence.append(a)
+        a, b = b, a + b
+    return sequence
+
+def is_prime(num):
+    if num < 2:
+        return False
+    for i in range(2, int(num ** 0.5) + 1):
+        if num % i == 0:
+            return False
+    return True
 
 # Generate fibonacci sequence
 fib_sequence = fibonacci(10)

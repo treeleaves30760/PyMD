@@ -120,7 +120,7 @@ The test suite covers:
 
 ## Example Test Method
 
-```python
+````python
 def test_new_feature(self):
     """Test description"""
     content = """
@@ -136,7 +136,7 @@ print("Hello World")
     
     test_utils.assert_contains(html, "Hello World")
     print(f"✅ Test passed - output saved to {output_file}")
-```
+````
 
 ## Current Test Status
 

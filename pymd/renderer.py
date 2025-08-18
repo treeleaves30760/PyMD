@@ -206,6 +206,31 @@ class PyMDRenderer:
         # Replace **text** with <strong>text</strong>
         return re.sub(r'\*\*(.*?)\*\*', r'<strong>\1</strong>', text)
 
+    def _process_display_comments(self, code: str) -> str:
+        """Process // comments in display-only code blocks"""
+        lines = code.split('\n')
+        processed_lines = []
+        for line in lines:
+            # Replace # comments with // comments for display
+            if '#' in line and not line.strip().startswith('"') and not line.strip().startswith("'"):
+                # Find the first # that's not inside quotes
+                in_quotes = False
+                quote_char = None
+                for i, char in enumerate(line):
+                    if char in ['"', "'"] and (i == 0 or line[i-1] != '\\'):
+                        if not in_quotes:
+                            in_quotes = True
+                            quote_char = char
+                        elif char == quote_char:
+                            in_quotes = False
+                            quote_char = None
+                    elif char == '#' and not in_quotes:
+                        # Replace # with // for display
+                        line = line[:i] + '//' + line[i+1:]
+                        break
+            processed_lines.append(line)
+        return '\n'.join(processed_lines)
+
     def render_table(self, data) -> str:
         """Render pandas DataFrame or other tabular data"""
         try:
@@ -282,6 +307,30 @@ class PyMDRenderer:
                     except Exception as e:
                         error_html = f'<pre class="error">Code execution error: {str(e)}</pre>'
                         self.add_element('error', str(e), error_html)
+                continue
+
+            # Handle display-only code blocks with ````
+            if stripped_line == '````':
+                i += 1  # Skip the opening ````
+                code_lines = []
+
+                # Collect all lines until closing ````
+                while i < len(lines):
+                    current_line = lines[i]
+                    if current_line.strip() == '````':
+                        # Found closing ````, stop collecting
+                        i += 1  # Skip the closing ````
+                        break
+                    code_lines.append(current_line)
+                    i += 1
+
+                # Display the code block without execution
+                if code_lines:
+                    code_block = '\n'.join(code_lines)
+                    # Process // comments in display blocks
+                    processed_code = self._process_display_comments(code_block)
+                    display_html = f'<pre class="display-code">{processed_code}</pre>'
+                    self.add_element('display_code', code_block, display_html)
                 continue
 
             # Skip // comments
@@ -378,7 +427,7 @@ class PyMDRenderer:
         body {{
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
             line-height: 1.6;
-            color: #333;
+            color: #1a1a1a;
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
@@ -390,6 +439,7 @@ class PyMDRenderer:
             margin-bottom: 16px;
             font-weight: 600;
             line-height: 1.25;
+            color: #1a1a1a;
         }}
         
         h1 {{
@@ -410,6 +460,7 @@ class PyMDRenderer:
         
         p {{
             margin-bottom: 16px;
+            color: #1a1a1a;
         }}
         
         strong {{
@@ -418,7 +469,7 @@ class PyMDRenderer:
         }}
         
         pre {{
-            background-color: #f6f8fa;
+            background-color: #e8e8e8;
             border-radius: 6px;
             padding: 16px;
             overflow: auto;
@@ -428,7 +479,7 @@ class PyMDRenderer:
         }}
         
         code {{
-            background-color: #f6f8fa;
+            background-color: #e8e8e8;
             border-radius: 3px;
             padding: 2px 4px;
             font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
@@ -498,6 +549,20 @@ class PyMDRenderer:
             word-wrap: break-word;
         }}
         
+        .display-code {{
+            background-color: #e8e8e8;
+            border: 1px solid #d0d0d0;
+            border-radius: 6px;
+            padding: 16px;
+            margin: 16px 0;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 14px;
+            line-height: 1.45;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            color: #333;
+        }}
+        
         ul, ol {{
             margin: 16px 0;
             padding-left: 0;
@@ -509,7 +574,7 @@ class PyMDRenderer:
             padding: 4px 0 4px 28px;
             line-height: 1.6;
             position: relative;
-            color: #333;
+            color: #1a1a1a;
         }}
         
         ul li::before {{

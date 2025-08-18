@@ -5,7 +5,9 @@ PyMD is a revolutionary markup language that combines familiar markdown syntax w
 ## ✨ Features
 
 - **📝 Markdown Syntax**: Use familiar markdown headers (#), lists (-), and plain text
-- **🐍 Python Code Blocks**: Execute Python code within ``` fenced blocks
+- **🐍 Dual Code Block Types**: 
+  - **``` (3 backticks)**: Execute Python code and show output
+  - **```` (4 backticks)**: Display code with syntax highlighting only
 - **🔗 Variable Persistence**: Variables persist across code blocks in the same document
 - **🔴 Live Preview**: Real-time rendering with auto-refresh as you edit
 - **📊 Rich Visualizations**: Built-in support for matplotlib, pandas, and other data science libraries
@@ -13,6 +15,7 @@ PyMD is a revolutionary markup language that combines familiar markdown syntax w
 - **📱 Beautiful Output**: Clean, responsive HTML with modern styling
 - **⚡ Fast Rendering**: Efficient parsing and rendering engine
 - **🔄 Auto-Refresh**: Changes reflect immediately in the live preview
+- **💬 Smart Comments**: Display blocks use `//` for cleaner code presentation
 
 ## 🚀 Quick Start
 
@@ -104,7 +107,7 @@ You can write multiple paragraphs easily.
 // This is a comment and will be ignored
 ```
 
-### Python Code Execution (Inside ``` Blocks)
+### Python Code Blocks
 
 **Simple Code Execution:**
 
@@ -153,7 +156,7 @@ pymd.image(plt.gcf(), "Beautiful sine wave")
 ```
 ````
 
-**Code Display:**
+**Code Display (Method 1 - Using pymd.code()):**
 
 ````markdown
 ```
@@ -169,12 +172,32 @@ print(f"Factorial of 5 is: {factorial(5)}")
 ```
 ````
 
+**Code Display (Method 2 - Using four backticks):**
+
+`````markdown
+````
+def factorial(n):
+    // Base case
+    if n <= 1:
+        return 1
+    // Recursive case
+    return n * factorial(n-1)
+
+// Example usage (not executed)
+result = factorial(5)
+````
+`````
+
 ### Key Features
 
 - **Variable Persistence**: Variables defined in one code block are available in subsequent blocks
 - **Mixed Content**: Alternate between markdown content and Python code seamlessly  
-- **Clean Separation**: Use ``` to clearly separate documentation from executable code
+- **Two Code Block Types**: 
+  - **Three backticks (```)**: Execute Python code and show output
+  - **Four backticks (````)**: Display code with syntax highlighting (no execution)
+- **Clean Separation**: Clear visual distinction between documentation and executable code
 - **Rich Output**: Code execution results are displayed with beautiful formatting
+- **Smart Comment Styling**: Display blocks use `//` comments for cleaner presentation
 
 ## 📁 Project Structure
 
