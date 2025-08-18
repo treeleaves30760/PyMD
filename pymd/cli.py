@@ -36,19 +36,27 @@ def render_command(args):
 
 def serve_command(args):
     """Start live preview server"""
-    if not os.path.exists(args.file):
-        print(f"Error: File '{args.file}' does not exist")
+    file_path = args.file if args.file else None
+
+    if file_path and not os.path.exists(file_path):
+        print(f"Error: File '{file_path}' does not exist")
         return 1
 
     try:
-        server = PyMDServer(args.file, args.port, args.host)
+        server = PyMDServer(file_path, args.port, args.host)
 
         # Display startup information
         print(f"🐍 PyMD Server Started")
-        print(f"📁 File: {args.file}")
+        if file_path:
+            print(f"📁 File: {file_path}")
+        else:
+            print(f"📁 File: <blank file>")
         print(f"🌐 Live Preview: http://{args.host}:{args.port}")
 
-        if hasattr(args, 'editor') and args.editor:
+        if hasattr(args, 'show') and args.show:
+            print(f"🌐 Display: http://{args.host}:{args.port}/display")
+        else:
+            # Default behavior - show editor URL
             editor_mode = getattr(args, 'mode', 'both')
             print(
                 f"✏️ Editor: http://{args.host}:{args.port}/editor/{editor_mode}")
@@ -186,15 +194,16 @@ def main():
     # Serve command
     serve_parser = subparsers.add_parser(
         'serve', help='Start live preview server')
-    serve_parser.add_argument('file', help='PyExecMD file to serve')
+    serve_parser.add_argument(
+        '--file', '-f', help='PyExecMD file to serve (optional)')
     serve_parser.add_argument('-p', '--port', type=int,
-                              default=5000, help='Port (default: 5000)')
+                              default=8080, help='Port (default: 8080)')
     serve_parser.add_argument(
         '--host', default='localhost', help='Host (default: localhost)')
     serve_parser.add_argument(
         '--debug', action='store_true', help='Debug mode')
     serve_parser.add_argument(
-        '--editor', action='store_true', help='Show editor URL on startup')
+        '--show', action='store_true', help='Open display website instead of editor')
     serve_parser.add_argument(
         '--mode', choices=['editing', 'viewing', 'both'],
         default='both', help='Editor mode (default: both)')

@@ -1,3 +1,4 @@
+# Python
 __pycache__/
 *.pyc
 *.pyo
@@ -9,8 +10,15 @@ __pycache__/
 *.pyzwz
 *.pyzwzw
 
+# Build
 dist/
-
 *.egg-info/
 
+# Publish
 publish.sh
+
+# .claude
+.claude/
+
+# .vscode
+.vscode/

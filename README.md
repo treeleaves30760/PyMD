@@ -21,8 +21,9 @@ PyExecMD is a revolutionary markup language that combines the simplicity of Mark
 ```bash
 pip install pyexecmd
 ```
+
 <details>
-   
+
 <summary> Option 2: Install from source </summary>
 
 1. **Clone the repository:**
@@ -37,6 +38,7 @@ pip install pyexecmd
    ```bash
    pip install -e .
    ```
+
 </details>
 
 ## Usage
@@ -50,10 +52,10 @@ pip install pyexecmd
 2. **Start live preview:**
 
    ```bash
-   pyexecmd serve my_document.pymd --port 8000
+   pyexecmd serve my_document.pymd --port 8080
    ```
 
-   Then open <http://localhost:8000> in your browser
+   Then open <http://localhost:8080> in your browser
 
    > **Note for macOS users:** Port 5000 is often used by AirPlay. Use `--port 8000` or another port to avoid conflicts.
 
@@ -124,7 +126,7 @@ pymd.table(df)
 
 ## 📁 Project Structure
 
-```
+```file
 PyMD/
 ├── pymd/                   # Main package directory
 │   ├── __init__.py        # Package initialization

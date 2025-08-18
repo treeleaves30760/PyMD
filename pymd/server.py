@@ -60,8 +60,8 @@ class PyMDFileHandler(FileSystemEventHandler):
 class PyMDServer:
     """Live preview server for PyExecMD files"""
 
-    def __init__(self, file_path, port=5000, host='localhost'):
-        self.file_path = os.path.abspath(file_path)
+    def __init__(self, file_path=None, port=8080, host='localhost'):
+        self.file_path = os.path.abspath(file_path) if file_path else None
         self.port = port
         self.host = host
         self.app = Flask(__name__)
@@ -76,29 +76,379 @@ class PyMDServer:
     def setup_routes(self):
         """Setup Flask routes"""
 
-        @self.app.route('/')
-        def index():
-            """Serve the main page with live preview"""
+#         @self.app.route('/')
+#         def index():
+#             """Serve the main page with live preview"""
+#             try:
+#                 if self.file_path:
+#                     print(f"Attempting to read file: {self.file_path}")
+#                     print(f"File exists: {os.path.exists(self.file_path)}")
+#                     print(
+#                         f"File readable: {os.access(self.file_path, os.R_OK)}")
+
+#                     with open(self.file_path, 'r', encoding='utf-8') as f:
+#                         content = f.read()
+
+#                     print(f"File content length: {len(content)}")
+#                 else:
+#                     content = ""  # Empty content for blank file
+#                     print("Using blank file content")
+
+#                 html = self.renderer.parse_and_render(content)
+#                 print(f"Rendered HTML length: {len(html)}")
+
+#                 # Create live preview template
+#                 template = '''
+# <!DOCTYPE html>
+# <html lang="en">
+# <head>
+#     <meta charset="UTF-8">
+#     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+#     <title>PyExecMD Live Preview - {{ filename }}</title>
+#     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+#     <style>
+#         body {
+#             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+#             line-height: 1.6;
+#             color: #333;
+#             max-width: 1200px;
+#             margin: 0 auto;
+#             padding: 20px;
+#             background-color: #fafafa;
+#         }
+
+#         .header {
+#             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+#             color: white;
+#             padding: 20px;
+#             border-radius: 10px;
+#             margin-bottom: 20px;
+#             text-align: center;
+#         }
+
+#         .live-indicator {
+#             position: fixed;
+#             top: 20px;
+#             right: 20px;
+#             background: #28a745;
+#             color: white;
+#             padding: 8px 16px;
+#             border-radius: 20px;
+#             font-size: 14px;
+#             font-weight: bold;
+#             z-index: 1000;
+#             box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+#         }
+
+#         .live-indicator.disconnected {
+#             background: #dc3545;
+#         }
+
+#         h1, h2, h3, h4, h5, h6 {
+#             margin-top: 24px;
+#             margin-bottom: 16px;
+#             font-weight: 600;
+#             line-height: 1.25;
+#         }
+
+#         h1 {
+#             font-size: 2em;
+#             border-bottom: 1px solid #eaecef;
+#             padding-bottom: 10px;
+#         }
+
+#         h2 {
+#             font-size: 1.5em;
+#             border-bottom: 1px solid #eaecef;
+#             padding-bottom: 8px;
+#         }
+
+#         h3 {
+#             font-size: 1.25em;
+#         }
+
+#         p {
+#             margin-bottom: 16px;
+#         }
+
+#         pre {
+#             background-color: #f6f8fa;
+#             border-radius: 6px;
+#             padding: 16px;
+#             overflow: auto;
+#             font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+#             font-size: 14px;
+#             line-height: 1.45;
+#         }
+
+#         code {
+#             background-color: #f6f8fa;
+#             border-radius: 3px;
+#             padding: 2px 4px;
+#             font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+#             font-size: 85%;
+#         }
+
+#         .image-container {
+#             margin: 20px 0;
+#             text-align: center;
+#         }
+
+#         .image-caption {
+#             font-style: italic;
+#             color: #666;
+#             margin-top: 8px;
+#         }
+
+#         .pymd-table {
+#             border-collapse: collapse;
+#             width: 100%;
+#             margin: 20px 0;
+#         }
+
+#         .pymd-table th,
+#         .pymd-table td {
+#             border: 1px solid #ddd;
+#             padding: 8px 12px;
+#             text-align: left;
+#         }
+
+#         .pymd-table th {
+#             background-color: #f6f8fa;
+#             font-weight: 600;
+#         }
+
+#         .pymd-table tr:nth-child(even) {
+#             background-color: #f9f9f9;
+#         }
+
+#         .error {
+#             background-color: #ffeaea;
+#             border: 1px solid #ff6b6b;
+#             border-radius: 6px;
+#             padding: 16px;
+#             color: #d63031;
+#             margin: 16px 0;
+#         }
+
+#         .data-output {
+#             background-color: #f0f8ff;
+#             border: 1px solid #b0c4de;
+#             border-radius: 6px;
+#             padding: 16px;
+#             margin: 16px 0;
+#         }
+
+#         @keyframes fadeIn {
+#             from { opacity: 0; transform: translateY(10px); }
+#             to { opacity: 1; transform: translateY(0); }
+#         }
+
+#         .pymd-content {
+#             animation: fadeIn 0.3s ease-in-out;
+#         }
+#     </style>
+# </head>
+# <body>
+#     <div class="live-indicator" id="liveIndicator">🟢 Live</div>
+
+#     <div id="content">
+#         {{ content|safe }}
+#     </div>
+
+#     <script>
+#         const socket = io();
+#         const liveIndicator = document.getElementById('liveIndicator');
+#         const content = document.getElementById('content');
+
+#         socket.on('connect', function() {
+#             liveIndicator.textContent = '🟢 Live';
+#             liveIndicator.className = 'live-indicator';
+#         });
+
+#         socket.on('disconnect', function() {
+#             liveIndicator.textContent = '🔴 Disconnected';
+#             liveIndicator.className = 'live-indicator disconnected';
+#         });
+
+#         socket.on('content_update', function(data) {
+#             content.innerHTML = data.html;
+#             // Add a subtle flash effect
+#             content.style.opacity = '0.7';
+#             setTimeout(() => { content.style.opacity = '1'; }, 150);
+#         });
+#     </script>
+# </body>
+# </html>
+#                 '''
+
+#                 # Extract content from full HTML
+#                 start_marker = '<div class="pymd-content">'
+#                 end_marker = '</div>'
+#                 start_idx = html.find(start_marker)
+#                 end_idx = html.find(end_marker, start_idx) + len(end_marker)
+
+#                 if start_idx != -1 and end_idx != -1:
+#                     content = html[start_idx:end_idx]
+#                 else:
+#                     content = '<div class="pymd-content"><p>No content rendered</p></div>'
+
+#                 return render_template_string(template,
+#                                               filename=os.path.basename(
+#                                                   self.file_path) if self.file_path else "Blank File",
+#                                               content=content)
+
+#             except Exception as e:
+#                 print(f"Error in index route: {str(e)}")
+#                 print(f"Error type: {type(e)}")
+#                 import traceback
+#                 print(f"Full traceback: {traceback.format_exc()}")
+
+#                 error_content = f'''
+#                 <div class="error">
+#                     <h2>Error loading file</h2>
+#                     <p><strong>Error:</strong> {str(e)}</p>
+#                     <p><strong>File:</strong> {self.file_path}</p>
+#                     <p><strong>Exists:</strong> {os.path.exists(self.file_path)}</p>
+#                     <p><strong>Readable:</strong> {os.access(self.file_path, os.R_OK) if os.path.exists(self.file_path) else 'File does not exist'}</p>
+#                 </div>
+#                 '''
+
+#                 # Create a minimal template for error display
+#                 error_template = f'''
+# <!DOCTYPE html>
+# <html lang="en">
+# <head>
+#     <meta charset="UTF-8">
+#     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+#     <title>PyExecMD Error</title>
+#     <style>
+#         body {{ font-family: Arial, sans-serif; margin: 40px; }}
+#         .error {{ background: #ffebee; border: 1px solid #f44336; padding: 20px; border-radius: 4px; }}
+#     </style>
+# </head>
+# <body>
+#     {error_content}
+# </body>
+# </html>
+#                 '''
+#                 return error_template
+
+        @self.app.route('/api/render', methods=['POST'])
+        def api_render():
+            """API endpoint for rendering PyExecMD content"""
             try:
-                print(f"Attempting to read file: {self.file_path}")
-                print(f"File exists: {os.path.exists(self.file_path)}")
-                print(f"File readable: {os.access(self.file_path, os.R_OK)}")
-
-                with open(self.file_path, 'r', encoding='utf-8') as f:
-                    content = f.read()
-
-                print(f"File content length: {len(content)}")
+                content = request.json.get('content', '')
                 html = self.renderer.parse_and_render(content)
-                print(f"Rendered HTML length: {len(html)}")
+                return jsonify({'success': True, 'html': html})
+            except Exception as e:
+                return jsonify({'success': False, 'error': str(e)})
 
-                # Create live preview template
+        @self.app.route('/editor')
+        @self.app.route('/editor/<mode>')
+        def editor(mode='both'):
+            """Serve the editor page with different viewing modes"""
+            try:
+                # Validate mode
+                if mode not in ['editing', 'viewing', 'both']:
+                    mode = 'both'
+
+                if self.file_path:
+                    with open(self.file_path, 'r', encoding='utf-8') as f:
+                        content = f.read()
+                else:
+                    content = ""  # Empty content for blank file
+
+                # Get initial rendered content for viewing mode
+                initial_html = ''
+                if mode in ['viewing', 'both']:
+                    try:
+                        initial_html = self.renderer.parse_and_render(content)
+                        # Extract just the body content
+                        start_marker = '<div class="pymd-content">'
+                        end_marker = '</div>'
+                        start_idx = initial_html.find(start_marker)
+                        end_idx = initial_html.find(
+                            end_marker, start_idx) + len(end_marker)
+                        if start_idx != -1 and end_idx != -1:
+                            initial_html = initial_html[start_idx:end_idx]
+                    except Exception as e:
+                        initial_html = f'<div class="error">Error rendering: {str(e)}</div>'
+
+                return self.render_editor_template(mode, content, initial_html)
+
+            except Exception as e:
+                return f"Error loading editor: {str(e)}"
+
+        @self.app.route('/api/content', methods=['GET'])
+        def get_content():
+            """API endpoint to get current file content"""
+            try:
+                if self.file_path:
+                    with open(self.file_path, 'r', encoding='utf-8') as f:
+                        content = f.read()
+                else:
+                    content = ""  # Empty content for blank file
+                return jsonify({'success': True, 'content': content})
+            except Exception as e:
+                return jsonify({'success': False, 'error': str(e)})
+
+        @self.app.route('/api/save', methods=['POST'])
+        def save_content():
+            """API endpoint to save file content as download"""
+            try:
+                content = request.json.get('content', '')
+                filename = request.json.get('filename', None)
+
+                if self.file_path:
+                    # If we have an existing file, create a new name with timestamp
+                    import datetime
+                    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                    base_name = os.path.splitext(
+                        os.path.basename(self.file_path))[0]
+                    download_filename = f"{base_name}_copy_{timestamp}.pymd"
+                else:
+                    # No original file, create new filename
+                    if filename and filename.strip():
+                        # Use provided filename
+                        if not filename.endswith('.pymd'):
+                            filename += '.pymd'
+                        download_filename = filename
+                    else:
+                        # Auto-generate filename
+                        import datetime
+                        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                        download_filename = f"untitled_{timestamp}.pymd"
+
+                return jsonify({
+                    'success': True,
+                    'download': True,
+                    'filename': download_filename,
+                    'content': content
+                })
+            except Exception as e:
+                return jsonify({'success': False, 'error': str(e)})
+
+        @self.app.route('/')
+        def display():
+            """Serve the display page with direct render"""
+            try:
+                if self.file_path:
+                    with open(self.file_path, 'r', encoding='utf-8') as f:
+                        content = f.read()
+                else:
+                    content = ""  # Empty content for blank file
+
+                html = self.renderer.parse_and_render(content)
+
+                # Create display template with direct render and footer
                 template = '''
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PyExecMD Live Preview - {{ filename }}</title>
+    <title>{{ filename }}</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <style>
         body {
@@ -109,33 +459,6 @@ class PyMDServer:
             margin: 0 auto;
             padding: 20px;
             background-color: #fafafa;
-        }
-        
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        
-        .live-indicator {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #28a745;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: bold;
-            z-index: 1000;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-        }
-        
-        .live-indicator.disconnected {
-            background: #dc3545;
         }
         
         h1, h2, h3, h4, h5, h6 {
@@ -233,6 +556,24 @@ class PyMDServer:
             margin: 16px 0;
         }
         
+        .footer {
+            border-top: 1px solid #eaecef;
+            padding: 20px 0;
+            margin-top: 40px;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .footer a {
+            color: #0366d6;
+            text-decoration: none;
+        }
+        
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -243,33 +584,18 @@ class PyMDServer:
         }
     </style>
 </head>
-<body>
-    <div class="live-indicator" id="liveIndicator">🟢 Live</div>
-    
-    <div class="header">
-        <h1>PyExecMD Live Preview</h1>
-        <p>File: <strong>{{ filename }}</strong></p>
-        <p>Auto-refreshing preview of your PyExecMD document</p>
-    </div>
-    
+<body>    
     <div id="content">
         {{ content|safe }}
     </div>
 
+    <div class="footer">
+        Powered By PyExecMD © <a href="https://github.com/treeleaves30760/PyMD" target="_blank">Github</a>
+    </div>
+
     <script>
         const socket = io();
-        const liveIndicator = document.getElementById('liveIndicator');
         const content = document.getElementById('content');
-        
-        socket.on('connect', function() {
-            liveIndicator.textContent = '🟢 Live';
-            liveIndicator.className = 'live-indicator';
-        });
-        
-        socket.on('disconnect', function() {
-            liveIndicator.textContent = '🔴 Disconnected';
-            liveIndicator.className = 'live-indicator disconnected';
-        });
         
         socket.on('content_update', function(data) {
             content.innerHTML = data.html;
@@ -295,22 +621,15 @@ class PyMDServer:
 
                 return render_template_string(template,
                                               filename=os.path.basename(
-                                                  self.file_path),
+                                                  self.file_path) if self.file_path else "Blank File",
                                               content=content)
 
             except Exception as e:
-                print(f"Error in index route: {str(e)}")
-                print(f"Error type: {type(e)}")
-                import traceback
-                print(f"Full traceback: {traceback.format_exc()}")
-
                 error_content = f'''
                 <div class="error">
                     <h2>Error loading file</h2>
                     <p><strong>Error:</strong> {str(e)}</p>
                     <p><strong>File:</strong> {self.file_path}</p>
-                    <p><strong>Exists:</strong> {os.path.exists(self.file_path)}</p>
-                    <p><strong>Readable:</strong> {os.access(self.file_path, os.R_OK) if os.path.exists(self.file_path) else 'File does not exist'}</p>
                 </div>
                 '''
 
@@ -329,80 +648,18 @@ class PyMDServer:
 </head>
 <body>
     {error_content}
+    <div style="border-top: 1px solid #eaecef; padding: 20px 0; margin-top: 40px; text-align: center; color: #666; font-size: 14px;">
+        Powered By PyExecMD © <a href="https://github.com/treeleaves30760/PyMD" target="_blank">Github</a>
+    </div>
 </body>
 </html>
                 '''
                 return error_template
 
-        @self.app.route('/api/render', methods=['POST'])
-        def api_render():
-            """API endpoint for rendering PyExecMD content"""
-            try:
-                content = request.json.get('content', '')
-                html = self.renderer.parse_and_render(content)
-                return jsonify({'success': True, 'html': html})
-            except Exception as e:
-                return jsonify({'success': False, 'error': str(e)})
-
-        @self.app.route('/editor')
-        @self.app.route('/editor/<mode>')
-        def editor(mode='both'):
-            """Serve the editor page with different viewing modes"""
-            try:
-                # Validate mode
-                if mode not in ['editing', 'viewing', 'both']:
-                    mode = 'both'
-
-                with open(self.file_path, 'r', encoding='utf-8') as f:
-                    content = f.read()
-
-                # Get initial rendered content for viewing mode
-                initial_html = ''
-                if mode in ['viewing', 'both']:
-                    try:
-                        initial_html = self.renderer.parse_and_render(content)
-                        # Extract just the body content
-                        start_marker = '<div class="pymd-content">'
-                        end_marker = '</div>'
-                        start_idx = initial_html.find(start_marker)
-                        end_idx = initial_html.find(
-                            end_marker, start_idx) + len(end_marker)
-                        if start_idx != -1 and end_idx != -1:
-                            initial_html = initial_html[start_idx:end_idx]
-                    except Exception as e:
-                        initial_html = f'<div class="error">Error rendering: {str(e)}</div>'
-
-                return self.render_editor_template(mode, content, initial_html)
-
-            except Exception as e:
-                return f"Error loading editor: {str(e)}"
-
-        @self.app.route('/api/content', methods=['GET'])
-        def get_content():
-            """API endpoint to get current file content"""
-            try:
-                with open(self.file_path, 'r', encoding='utf-8') as f:
-                    content = f.read()
-                return jsonify({'success': True, 'content': content})
-            except Exception as e:
-                return jsonify({'success': False, 'error': str(e)})
-
-        @self.app.route('/api/save', methods=['POST'])
-        def save_content():
-            """API endpoint to save file content"""
-            try:
-                content = request.json.get('content', '')
-                # No need to process content - it should be saved exactly as received
-                # The editor handles escaping properly, so we just write the raw content
-                with open(self.file_path, 'w', encoding='utf-8') as f:
-                    f.write(content)
-                return jsonify({'success': True, 'message': 'File saved successfully'})
-            except Exception as e:
-                return jsonify({'success': False, 'error': str(e)})
-
     def render_editor_template(self, mode, content, initial_html):
         """Render the editor template with specified mode"""
-        filename = os.path.basename(self.file_path)
+        filename = os.path.basename(
+            self.file_path) if self.file_path else "Blank File"
 
         # Properly escape content for JavaScript using JSON
         import json
@@ -749,25 +1006,52 @@ class PyMDServer:
             const content = editor.getValue();
             const saveBtn = document.getElementById('saveBtn');
             
+            let filename = null;
+            
+            // If this is a blank file (no original file), prompt for filename
+            if ('{filename}' === 'Blank File') {{
+                filename = prompt('Enter filename (without extension):', 'untitled');
+                if (filename === null) {{
+                    // User cancelled
+                    return;
+                }}
+            }}
+            
             saveBtn.disabled = true;
-            updateStatusText('Saving...');
+            updateStatusText('Preparing download...');
+            
+            const payload = {{ content: content }};
+            if (filename) {{
+                payload.filename = filename;
+            }}
             
             fetch('/api/save', {{
                 method: 'POST',
                 headers: {{
                     'Content-Type': 'application/json',
                 }},
-                body: JSON.stringify({{ content: content }})
+                body: JSON.stringify(payload)
             }})
             .then(response => response.json())
             .then(data => {{
-                if (data.success) {{
+                if (data.success && data.download) {{
+                    // Create download
+                    const blob = new Blob([data.content], {{ type: 'text/plain' }});
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = data.filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                    
                     isModified = false;
                     updateSaveButton();
-                    updateStatusText('Saved');
-                    setTimeout(() => updateStatusText('Ready'), 2000);
+                    updateStatusText('Downloaded: ' + data.filename);
+                    setTimeout(() => updateStatusText('Ready'), 3000);
                 }} else {{
-                    updateStatusText('Save failed: ' + data.error);
+                    updateStatusText('Save failed: ' + (data.error || 'Unknown error'));
                 }}
             }})
             .catch(error => {{
@@ -855,22 +1139,29 @@ class PyMDServer:
 
     def start_file_watcher(self):
         """Start watching the file for changes"""
-        if os.path.exists(self.file_path):
+        if self.file_path and os.path.exists(self.file_path):
             event_handler = PyMDFileHandler(self.socketio, self.file_path)
             self.observer = Observer()
             self.observer.schedule(event_handler, os.path.dirname(
                 self.file_path), recursive=False)
             self.observer.start()
             print(f"Watching file: {self.file_path}")
-        else:
+        elif self.file_path:
             print(f"Warning: File {self.file_path} does not exist")
+        else:
+            print("No file specified - file watching disabled")
 
     def run(self, debug=False):
         """Start the live preview server"""
         print(f"🐍 PyExecMD Live Preview Server")
-        print(f"📁 File: {self.file_path}")
+        if self.file_path:
+            print(f"📁 File: {self.file_path}")
+            print(f"💡 Tip: Edit your .pymd file and see changes instantly!")
+        else:
+            print(f"📁 File: <blank file>")
+            print(
+                f"💡 Tip: Start with a blank file, edit in the editor and save as needed!")
         print(f"🌐 Server: http://{self.host}:{self.port}")
-        print(f"💡 Tip: Edit your .pymd file and see changes instantly!")
         print("-" * 50)
 
         # Start file watcher in a separate thread
@@ -894,8 +1185,8 @@ def main():
     parser = argparse.ArgumentParser(
         description='PyExecMD Live Preview Server')
     parser.add_argument('file', help='PyExecMD file to preview')
-    parser.add_argument('--port', '-p', type=int, default=5000,
-                        help='Port to run server on (default: 5000)')
+    parser.add_argument('--port', '-p', type=int, default=8080,
+                        help='Port to run server on (default: 8080)')
     parser.add_argument('--host', default='localhost',
                         help='Host to bind to (default: localhost)')
     parser.add_argument('--debug', action='store_true',
