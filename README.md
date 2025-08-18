@@ -1,4 +1,4 @@
-# 🐍 PyMD: Python-Powered Markdown
+# PyMD: Python-Powered Markdown
 
 PyMD is a revolutionary markup language that combines the simplicity of Markdown with the full power of Python. Write documents with executable code, dynamic content, and beautiful visualizations that update in real-time!
 
