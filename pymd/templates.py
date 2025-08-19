@@ -866,8 +866,48 @@ def get_editor_template(mode, filename, escaped_content, initial_html):
         // Mode switching
         document.getElementById('modeSelector').addEventListener('change', function(e) {{
             const newMode = e.target.value;
-            window.location.href = `/editor/${{newMode}}`;
+            switchMode(newMode);
         }});
+        
+        function switchMode(newMode) {{
+            currentMode = newMode;
+            const editorPanel = document.getElementById('editorPanel');
+            const previewPanel = document.getElementById('previewPanel');
+            
+            // Update panel visibility and sizes
+            switch(newMode) {{
+                case 'editing':
+                    editorPanel.style.width = '100%';
+                    editorPanel.style.display = 'block';
+                    previewPanel.style.width = '0';
+                    previewPanel.style.display = 'none';
+                    break;
+                case 'viewing':
+                    editorPanel.style.width = '0';
+                    editorPanel.style.display = 'none';
+                    previewPanel.style.width = '100%';
+                    previewPanel.style.display = 'block';
+                    break;
+                case 'both':
+                    editorPanel.style.width = '50%';
+                    editorPanel.style.display = 'block';
+                    previewPanel.style.width = '50%';
+                    previewPanel.style.display = 'block';
+                    break;
+            }}
+            
+            // Update editor layout after panel resize
+            if (editor) {{
+                setTimeout(() => {{
+                    editor.layout();
+                }}, 100);
+            }}
+            
+            // Update preview if needed
+            if (newMode === 'viewing' || newMode === 'both') {{
+                updatePreview();
+            }}
+        }}
         
         // Save functionality
         document.getElementById('saveBtn').addEventListener('click', saveFile);
