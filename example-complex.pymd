@@ -1,0 +1,80 @@
+# Complex Code Example PyMD
+
+
+## Import the Module
+
+```
+import torch
+from transformers import AutoTokenizer, AutoModelForCausalLM
+```
+
+## Basic Setting
+
+```
+model_name = "google/gemma-3-270m-it"
+prompt = "Explain the difference between TCP and UDP in 3 bullet points."
+
+device = (
+    "cuda" if torch.cuda.is_available()
+    else "mps" if torch.backends.mps.is_available()
+    else "cpu"
+)
+dtype = torch.float32 if device == "cpu" else torch.float16
+```
+
+## Load the model and tokenizer
+
+```
+tok = AutoTokenizer.from_pretrained(model_name, use_fast=True)
+if tok.pad_token is None:
+    tok.pad_token = tok.eos_token
+
+model = AutoModelForCausalLM.from_pretrained(
+    model_name,
+    torch_dtype=dtype if device != "cpu" else torch.float32,  # CPU can't load fp16
+)
+model.to(device).eval()
+
+try:
+    # mode options: "default", "reduce-overhead", "max-autotune"
+    model = torch.compile(model, mode="reduce-overhead", fullgraph=False)
+except Exception as e:
+    print(f"[warn] torch.compile not used: {e}")
+
+if getattr(tok, "chat_template", None):
+    messages = [{"role": "user", "content": prompt}]
+    text = tok.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+else:
+    text = prompt
+```
+
+## Start generating
+
+```
+inputs = tok(text, return_tensors="pt").to(device)
+
+gen_kwargs = dict(
+    max_new_tokens=200,
+    temperature=0.7,
+    top_p=0.9,
+    do_sample=True,
+    eos_token_id=tok.eos_token_id,
+    pad_token_id=tok.pad_token_id,
+    use_cache=True,
+)
+
+with torch.inference_mode():
+    if device in ("cuda", "mps"):
+        # Pick a safe autocast dtype
+        amp_dtype = torch.bfloat16 if (device == "cuda" and torch.cuda.is_bf16_supported()) else torch.float16
+        with torch.autocast(device_type=device, dtype=amp_dtype):
+            out = model.generate(**inputs, **gen_kwargs)
+    else:
+        out = model.generate(**inputs, **gen_kwargs)
+
+text_out = tok.decode(out[0], skip_special_tokens=True)
+if not getattr(tok, "chat_template", None) and text_out.startswith(prompt):
+    text_out = text_out[len(prompt):].lstrip()
+
+pymd.text(text_out)
+```

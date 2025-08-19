@@ -20,5 +20,8 @@ publish.sh
 # .claude
 .claude/
 
+# .cursor
+.cursor/
+
 # .vscode
 .vscode/
