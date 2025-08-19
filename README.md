@@ -156,6 +156,27 @@ pymd.image(plt.gcf(), "Beautiful sine wave")
 ```
 ````
 
+**Interactive Input with Mock Values:**
+
+````markdown
+```
+# Get user input (with mock values for non-interactive execution)
+name = input("Enter your name: ") # input: Alice
+age = input("Enter your age: ") # input: 25
+
+# Use the input values
+pymd.h2(f"Welcome, {name}!")
+pymd.text(f"You are {age} years old.")
+
+# Input without mock value defaults to empty string
+optional_input = input("Optional comment: ")
+if optional_input:
+    print(f"Comment: {optional_input}")
+else:
+    print("No comment provided")
+```
+````
+
 **Code Display (Method 1 - Using pymd.code()):**
 
 ````markdown
@@ -195,9 +216,19 @@ result = factorial(5)
 - **Two Code Block Types**: 
   - **Three backticks (```)**: Execute Python code and show output
   - **Four backticks (````)**: Display code with syntax highlighting (no execution)
+- **Interactive Input Support**: Use `input()` with mock values for non-interactive execution
 - **Clean Separation**: Clear visual distinction between documentation and executable code
 - **Rich Output**: Code execution results are displayed with beautiful formatting
 - **Smart Comment Styling**: Display blocks use `//` comments for cleaner presentation
+
+### Input Mock System
+
+PyMD supports interactive input through a mock system that allows documents to be rendered without user interaction:
+
+- **With Mock Value**: `input("Prompt: ") # input: mock_value` - Returns "mock_value"
+- **Without Mock Value**: `input("Prompt: ")` - Returns empty string ("")
+- **Multiple Inputs**: Each `input()` call uses mock values in sequence
+- **Silent Execution**: Mock inputs don't produce console output, only the actual code results are shown
 
 ## 📁 Project Structure
 

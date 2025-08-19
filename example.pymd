@@ -295,6 +295,58 @@ Outside code blocks, you can use standard markdown syntax:
 
 You can seamlessly mix markdown content with code blocks. This makes documentation clean and readable while keeping the code execution powerful.
 
+## Interactive Input with Mock Values
+
+PyMD supports interactive input through a mock system for non-interactive document execution:
+
+```
+# Interactive input with mock values
+user_name = input("What's your name? ") # input: Alice
+user_age = input("How old are you? ") # input: 28
+
+pymd.h3(f"User Profile: {user_name}")
+pymd.text(f"**Name:** {user_name}")
+pymd.text(f"**Age:** {user_age}")
+
+# Calculate birth year
+birth_year = 2025 - int(user_age)
+pymd.text(f"**Estimated birth year:** {birth_year}")
+```
+
+Input without mock values defaults to empty string:
+
+```
+# Input without mock value (defaults to empty)
+optional_comment = input("Any comments? ")
+
+if optional_comment:
+    pymd.text(f"**Comment:** {optional_comment}")
+else:
+    pymd.text("**No comment provided** (empty mock value)")
+```
+
+Multiple inputs work sequentially:
+
+```
+# Multiple input example
+first_name = input("First name: ") # input: John
+last_name = input("Last name: ") # input: Doe
+favorite_color = input("Favorite color: ") # input: Blue
+
+pymd.h3("Personal Information")
+pymd.text(f"- **Full Name:** {first_name} {last_name}")
+pymd.text(f"- **Favorite Color:** {favorite_color}")
+
+# Create a simple profile
+profile = {
+    'name': f"{first_name} {last_name}",
+    'color': favorite_color,
+    'profile_id': len(first_name) + len(last_name)
+}
+
+pymd.text(f"**Generated Profile ID:** {profile['profile_id']}")
+```
+
 ## Interactive Development
 
 ```
@@ -317,7 +369,8 @@ This example demonstrates PyMD's powerful features:
 3. **Variable Persistence**: Data flows between code blocks
 4. **Rich Visualizations**: Matplotlib charts render beautifully
 5. **Data Analysis**: Full pandas functionality
-6. **Mixed Content**: Seamless blend of documentation and code
+6. **Interactive Input**: Mock input system for non-interactive execution
+7. **Mixed Content**: Seamless blend of documentation and code
 
 ```
 # Final message

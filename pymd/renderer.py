@@ -74,7 +74,7 @@ class PyMD:
         if self.renderer:
             self.renderer.add_element('text', content, html)
         return html
-    
+
     def _process_bold_text(self, text: str) -> str:
         """Process **bold** syntax in text"""
         # Replace **text** with <strong>text</strong>
@@ -118,6 +118,37 @@ class PyMDRenderer:
             'html': html
         })
 
+    def _parse_input_mocks(self, code: str) -> Dict[str, str]:
+        """Parse input mock values from comments in the format: # input: value"""
+        input_mocks = {}
+        lines = code.split('\n')
+
+        for line in lines:
+            # Look for input() calls with mock values in comments
+            if 'input(' in line and '# input:' in line:
+                # Extract the mock value after "# input:"
+                comment_part = line.split('# input:')[1].strip()
+                # Find the input() call to get a unique identifier
+                # For simplicity, we'll use line position, but this could be improved
+                input_mocks[len(input_mocks)] = comment_part
+            elif 'input(' in line and '# input:' not in line:
+                input_mocks[len(input_mocks)] = ''
+
+        return input_mocks
+
+    def _create_mock_input(self, input_mocks: Dict[str, str]):
+        """Create a mock input function that returns predefined values"""
+        mock_values = list(input_mocks.values())
+        call_count = [0]  # Use list to make it mutable in closure
+
+        def mock_input(prompt=''):
+            value = mock_values[call_count[0]]
+            call_count[0] += 1
+            # Don't print anything - just return the mock value silently
+            return value
+
+        return mock_input
+
     def execute_code(self, code: str) -> Dict[str, Any]:
         """Execute Python code and capture output"""
         # Capture stdout and stderr
@@ -134,6 +165,9 @@ class PyMDRenderer:
         }
 
         try:
+            # Parse input mock values
+            input_mocks = self._parse_input_mocks(code)
+
             # Create execution environment with pymd available
             exec_globals = {
                 '__builtins__': __builtins__,
@@ -142,6 +176,24 @@ class PyMDRenderer:
                 'pd': pd,
                 **self.variables
             }
+
+            # Override input function if there are input() calls in the code
+            if 'input(' in code:
+                if input_mocks:
+                    exec_globals['input'] = self._create_mock_input(
+                        input_mocks)
+                else:
+                    # Check if there are any input() calls without mock values
+                    lines = code.split('\n')
+                    input_line_found = False
+                    for line in lines:
+                        if 'input(' in line and '# input:' not in line:
+                            input_line_found = True
+                            break
+
+                    if input_line_found:
+                        raise RuntimeError("input() function found without mock value. "
+                                           "Please add '# input: <value>' comment after each input() call.")
 
             # Redirect output
             sys.stdout = stdout_capture
@@ -152,7 +204,7 @@ class PyMDRenderer:
 
             # Update variables
             self.variables.update({k: v for k, v in exec_globals.items()
-                                   if not k.startswith('__') and k not in ['pymd', 'plt', 'pd']})
+                                   if not k.startswith('__') and k not in ['pymd', 'plt', 'pd', 'input']})
 
             result['output'] = stdout_capture.getvalue()
             result['variables'] = self.variables
@@ -349,7 +401,8 @@ class PyMDRenderer:
 
                 if level > 0 and level <= 6 and stripped_line[level:].strip():
                     header_text = stripped_line[level:].strip()
-                    processed_header = self._process_bold_text_in_content(header_text)
+                    processed_header = self._process_bold_text_in_content(
+                        header_text)
                     header_html = f'<h{level}>{processed_header}</h{level}>'
                     self.add_element(f'h{level}', header_text, header_html)
                     i += 1
@@ -374,7 +427,8 @@ class PyMDRenderer:
                         break
 
                 if list_items:
-                    processed_items = [self._process_bold_text_in_content(item) for item in list_items]
+                    processed_items = [self._process_bold_text_in_content(
+                        item) for item in list_items]
                     ul_html = '<ul>' + \
                         ''.join(
                             f'<li>{item}</li>' for item in processed_items) + '</ul>'
@@ -397,7 +451,8 @@ class PyMDRenderer:
                         break
 
                 if list_items:
-                    processed_items = [self._process_bold_text_in_content(item) for item in list_items]
+                    processed_items = [self._process_bold_text_in_content(
+                        item) for item in list_items]
                     ol_html = '<ol>' + \
                         ''.join(
                             f'<li>{item}</li>' for item in processed_items) + '</ol>'
