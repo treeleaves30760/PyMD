@@ -586,13 +586,13 @@ def get_editor_template(mode, filename, escaped_content, initial_html):
             animation: fadeIn 0.3s ease-in-out;
         }}
         
-        /* Monaco Editor custom line backgrounds for code blocks */
+        /* Monaco Editor custom line backgrounds for code blocks - using semi-transparent */
         .execution-code-line {{
-            background-color: #f5f5f5 !important;
+            background-color: rgba(128, 128, 128, 0.15) !important;
         }}
         
         .display-code-line {{
-            background-color: #ffffff !important;
+            background-color: rgba(250, 250, 250, 0.8) !important;
         }}
     </style>
 </head>
@@ -732,7 +732,10 @@ def get_editor_template(mode, filename, escaped_content, initial_html):
                     {{ token: 'source', foreground: '000000' }}
                 ],
                 colors: {{
-                    'editor.background': '#ffffff'
+                    'editor.background': '#ffffff',
+                    'editor.selectionBackground': '#63A1FF',
+                    'editor.selectionForeground': '#ffffff',
+                    'editor.inactiveSelectionBackground': '#E5EBF1'
                 }}
             }});
             
