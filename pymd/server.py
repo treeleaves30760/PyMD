@@ -41,14 +41,13 @@ class PyMDFileHandler(FileSystemEventHandler):
 
             html = self.renderer.parse_and_render(content)
 
-            # Extract just the body content for live updates
+            # Extract the full pymd-content wrapper robustly
             start_marker = '<div class="pymd-content">'
-            end_marker = '</div>'
             start_idx = html.find(start_marker)
-            end_idx = html.find(end_marker, start_idx) + len(end_marker)
+            end_body_idx = html.rfind('</body>')
 
-            if start_idx != -1 and end_idx != -1:
-                body_content = html[start_idx:end_idx]
+            if start_idx != -1 and end_body_idx != -1 and end_body_idx > start_idx:
+                body_content = html[start_idx:end_body_idx]
             else:
                 body_content = html
 
@@ -108,14 +107,12 @@ class PyMDServer:
                 if mode in ['viewing', 'both']:
                     try:
                         initial_html = self.renderer.parse_and_render(content)
-                        # Extract just the body content
+                        # Extract full pymd-content wrapper safely
                         start_marker = '<div class="pymd-content">'
-                        end_marker = '</div>'
                         start_idx = initial_html.find(start_marker)
-                        end_idx = initial_html.find(
-                            end_marker, start_idx) + len(end_marker)
-                        if start_idx != -1 and end_idx != -1:
-                            initial_html = initial_html[start_idx:end_idx]
+                        end_body_idx = initial_html.rfind('</body>')
+                        if start_idx != -1 and end_body_idx != -1 and end_body_idx > start_idx:
+                            initial_html = initial_html[start_idx:end_body_idx]
                     except Exception as e:
                         initial_html = f'<div class="error">Error rendering: {str(e)}</div>'
 
@@ -138,6 +135,22 @@ class PyMDServer:
                 return jsonify({'success': True, 'content': content})
             except Exception as e:
                 return jsonify({'success': False, 'error': str(e)})
+
+        @self.app.route('/api/write', methods=['POST'])
+        def write_content():
+            """API endpoint to write editor content to the backing .pymd file"""
+            try:
+                if not self.file_path:
+                    return jsonify({'success': False, 'error': 'No file path specified on server'}), 400
+
+                content = request.json.get('content', '')
+                with open(self.file_path, 'w', encoding='utf-8') as f:
+                    f.write(content)
+
+                # File watcher will detect the write and emit an update
+                return jsonify({'success': True})
+            except Exception as e:
+                return jsonify({'success': False, 'error': str(e)}), 500
 
         @self.app.route('/api/save', methods=['POST'])
         def save_content():
@@ -191,12 +204,10 @@ class PyMDServer:
 
                 # Extract content from full HTML
                 start_marker = '<div class="pymd-content">'
-                end_marker = '</div>'
                 start_idx = html.find(start_marker)
-                end_idx = html.find(end_marker, start_idx) + len(end_marker)
-
-                if start_idx != -1 and end_idx != -1:
-                    content = html[start_idx:end_idx]
+                end_body_idx = html.rfind('</body>')
+                if start_idx != -1 and end_body_idx != -1 and end_body_idx > start_idx:
+                    content = html[start_idx:end_body_idx]
                 else:
                     content = '<div class="pymd-content"><p>No content rendered</p></div>'
 

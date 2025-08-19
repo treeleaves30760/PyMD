@@ -382,6 +382,54 @@ def get_editor_template(mode, filename, escaped_content, initial_html):
             overflow-y: auto;
             padding: 20px;
             background: white;
+            position: relative;
+        }}
+
+        /* Loading overlay for preview */
+        .loading-overlay {{
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.75);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }}
+
+        .spinner {{
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e0e0e0;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }}
+
+        @keyframes spin {{
+            to {{ transform: rotate(360deg); }}
+        }}
+
+        /* Toast Notification */
+        .toast {{
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            background: rgba(50, 50, 50, 0.95);
+            color: #fff;
+            padding: 10px 16px;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            z-index: 9999;
+        }}
+        .toast.show {{
+            opacity: 1;
+            transform: translateY(0);
         }}
         
         #editor {{
@@ -620,6 +668,9 @@ def get_editor_template(mode, filename, escaped_content, initial_html):
         </div>
         <div class="preview-panel" id="previewPanel">
             <div id="preview">{initial_html}</div>
+            <div class="loading-overlay" id="previewLoading" style="display: none;">
+                <div class="spinner"></div>
+            </div>
         </div>
     </div>
 
@@ -628,6 +679,7 @@ def get_editor_template(mode, filename, escaped_content, initial_html):
         let socket;
         let currentMode = '{mode}';
         let isModified = false;
+        let isRendering = false;
         
         // Initialize Monaco Editor
         require.config({{ paths: {{ 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' }} }});
@@ -827,11 +879,6 @@ def get_editor_template(mode, filename, escaped_content, initial_html):
                 isModified = true;
                 updateSaveButton();
                 updateStatusText('Modified');
-                
-                // Auto-preview in both mode
-                if (currentMode === 'both' || currentMode === 'viewing') {{
-                    debouncePreview();
-                }}
             }});
             
             // Track cursor position
@@ -842,7 +889,7 @@ def get_editor_template(mode, filename, escaped_content, initial_html):
             
             // Keyboard shortcuts
             editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, function() {{
-                saveFile();
+                writeAndRun();
             }});
         }});
         
@@ -863,6 +910,23 @@ def get_editor_template(mode, filename, escaped_content, initial_html):
         socket.on('content_update', function(data) {{
             if (currentMode === 'viewing' || currentMode === 'both') {{
                 document.getElementById('preview').innerHTML = data.html;
+            }}
+            // Hide loading overlay if we were rendering
+            const overlay = document.getElementById('previewLoading');
+            overlay.style.display = 'none';
+            if (isRendering) {{
+                // Determine if this is an error update
+                const temp = document.createElement('div');
+                temp.innerHTML = data.html || '';
+                const hasError = !!temp.querySelector('.error');
+                isRendering = false;
+                isModified = false;
+                updateSaveButton();
+                updateStatusText('Rendered');
+                setTimeout(() => updateStatusText('Ready'), 1500);
+                if (!hasError) {{
+                    showToast('Re-rendered successfully');
+                }}
             }}
         }});
         
@@ -906,10 +970,36 @@ def get_editor_template(mode, filename, escaped_content, initial_html):
                 }}, 100);
             }}
             
-            // Update preview if needed
-            if (newMode === 'viewing' || newMode === 'both') {{
-                updatePreview();
-            }}
+            // Do not auto-render on mode change; manual Ctrl+S to run
+        }}
+        // Write current content to disk and trigger render via file watcher
+        function writeAndRun() {{
+            if (!editor) return;
+            const overlay = document.getElementById('previewLoading');
+            overlay.style.display = 'flex';
+            isRendering = true;
+            updateStatusText('Saving & Rendering...');
+            const content = editor.getValue();
+            fetch('/api/write', {{
+                method: 'POST',
+                headers: {{ 'Content-Type': 'application/json' }},
+                body: JSON.stringify({{ content }})
+            }})
+            .then(res => res.json())
+            .then(data => {{
+                if (!data.success) {{
+                    // Fallback: if write failed (e.g., no file path), try client-side render
+                    updateStatusText('Write failed, rendering client-side...');
+                    isRendering = false;
+                    updatePreview();
+                }}
+            }})
+            .catch(err => {{
+                console.error('Write error:', err);
+                updateStatusText('Write error: ' + err.message);
+                isRendering = false;
+                overlay.style.display = 'none';
+            }});
         }}
         
         // Save functionality
@@ -991,6 +1081,25 @@ def get_editor_template(mode, filename, escaped_content, initial_html):
         function updateStatusText(text) {{
             document.getElementById('statusText').textContent = text;
         }}
+
+        function showToast(message) {{
+            let toast = document.getElementById('toast');
+            if (!toast) {{
+                toast = document.createElement('div');
+                toast.id = 'toast';
+                toast.className = 'toast';
+                document.body.appendChild(toast);
+            }}
+            toast.textContent = message;
+            toast.style.display = 'block';
+            requestAnimationFrame(() => {{
+                toast.classList.add('show');
+            }});
+            setTimeout(() => {{
+                toast.classList.remove('show');
+                setTimeout(() => {{ toast.style.display = 'none'; }}, 200);
+            }}, 2000);
+        }}
         
         // Debounced preview update
         let previewTimeout;
@@ -1003,6 +1112,10 @@ def get_editor_template(mode, filename, escaped_content, initial_html):
             if (!editor) return;
             
             const content = editor.getValue();
+            const overlay = document.getElementById('previewLoading');
+            overlay.style.display = 'flex';
+            updateStatusText('Rendering...');
+            
             fetch('/api/render', {{
                 method: 'POST',
                 headers: {{
@@ -1020,10 +1133,19 @@ def get_editor_template(mode, filename, escaped_content, initial_html):
                     if (contentDiv) {{
                         document.getElementById('preview').innerHTML = contentDiv.innerHTML;
                     }}
+                    updateStatusText('Rendered');
+                    setTimeout(() => updateStatusText('Ready'), 1500);
+                    showToast('Rendered successfully');
+                }} else {{
+                    updateStatusText('Render failed: ' + (data.error || 'Unknown error'));
                 }}
             }})
             .catch(error => {{
                 console.error('Preview update error:', error);
+                updateStatusText('Render error: ' + error.message);
+            }})
+            .finally(() => {{
+                overlay.style.display = 'none';
             }});
         }}
         
