@@ -1,11 +1,11 @@
 # Complex Code Example PyMD
 
-
 ## Import the Module
 
 ```
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
+pymd.text('Finish the import')
 ```
 
 ## Basic Setting
@@ -20,6 +20,7 @@ device = (
     else "cpu"
 )
 dtype = torch.float32 if device == "cpu" else torch.float16
+pymd.text(f'Finish the setting, dtype: {dtype}')
 ```
 
 ## Load the model and tokenizer
@@ -46,6 +47,8 @@ if getattr(tok, "chat_template", None):
     text = tok.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
 else:
     text = prompt
+
+pymd.text(f'Finisht the model loading, text: \n{text}')
 ```
 
 ## Start generating
