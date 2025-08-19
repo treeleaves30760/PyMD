@@ -271,6 +271,7 @@ ERROR_TEMPLATE = '''
 </html>
 '''
 
+
 def get_editor_template(mode, filename, escaped_content, initial_html):
     """Generate the editor template with specified mode"""
     template = f'''
@@ -432,7 +433,7 @@ def get_editor_template(mode, filename, escaped_content, initial_html):
         }}
         
         pre {{
-            background-color: #e8e8e8;
+            background-color: #f6f8fa;
             border-radius: 6px;
             padding: 16px;
             overflow: auto;
@@ -442,7 +443,7 @@ def get_editor_template(mode, filename, escaped_content, initial_html):
         }}
         
         code {{
-            background-color: #e8e8e8;
+            background-color: #f6f8fa;
             border-radius: 3px;
             padding: 2px 4px;
             font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
@@ -584,6 +585,15 @@ def get_editor_template(mode, filename, escaped_content, initial_html):
         .pymd-content {{
             animation: fadeIn 0.3s ease-in-out;
         }}
+        
+        /* Monaco Editor custom line backgrounds for code blocks */
+        .execution-code-line {{
+            background-color: #f5f5f5 !important;
+        }}
+        
+        .display-code-line {{
+            background-color: #ffffff !important;
+        }}
     </style>
 </head>
 <body>
@@ -724,6 +734,77 @@ def get_editor_template(mode, filename, escaped_content, initial_html):
                 colors: {{
                     'editor.background': '#ffffff'
                 }}
+            }});
+            
+            // Add line background color rules for different code block types
+            monaco.editor.onDidCreateEditor(function(editor) {{
+                // Store original decorations
+                let codeBlockDecorations = [];
+                
+                function updateCodeBlockBackgrounds() {{
+                    const model = editor.getModel();
+                    if (!model) return;
+                    
+                    const newDecorations = [];
+                    const lines = model.getLinesContent();
+                    let inExecutionBlock = false;
+                    let inDisplayBlock = false;
+                    
+                    for (let i = 0; i < lines.length; i++) {{
+                        const line = lines[i].trim();
+                        
+                        // Check for execution block start/end (```)
+                        if (line === '```') {{
+                            inExecutionBlock = !inExecutionBlock;
+                            newDecorations.push({{
+                                range: new monaco.Range(i + 1, 1, i + 1, 1),
+                                options: {{
+                                    isWholeLine: true,
+                                    className: 'execution-code-line'
+                                }}
+                            }});
+                        }}
+                        // Check for display block start/end (````)
+                        else if (line === '````') {{
+                            inDisplayBlock = !inDisplayBlock;
+                            newDecorations.push({{
+                                range: new monaco.Range(i + 1, 1, i + 1, 1),
+                                options: {{
+                                    isWholeLine: true,
+                                    className: 'display-code-line'
+                                }}
+                            }});
+                        }}
+                        // Lines inside execution blocks get gray background
+                        else if (inExecutionBlock) {{
+                            newDecorations.push({{
+                                range: new monaco.Range(i + 1, 1, i + 1, 1),
+                                options: {{
+                                    isWholeLine: true,
+                                    className: 'execution-code-line'
+                                }}
+                            }});
+                        }}
+                        // Lines inside display blocks keep white background
+                        else if (inDisplayBlock) {{
+                            newDecorations.push({{
+                                range: new monaco.Range(i + 1, 1, i + 1, 1),
+                                options: {{
+                                    isWholeLine: true,
+                                    className: 'display-code-line'
+                                }}
+                            }});
+                        }}
+                    }}
+                    
+                    codeBlockDecorations = editor.deltaDecorations(codeBlockDecorations, newDecorations);
+                }}
+                
+                // Update backgrounds on content change
+                editor.onDidChangeModelContent(updateCodeBlockBackgrounds);
+                
+                // Initial update
+                setTimeout(updateCodeBlockBackgrounds, 100);
             }});
             
             editor = monaco.editor.create(document.getElementById('editor'), {{
@@ -914,5 +995,5 @@ def get_editor_template(mode, filename, escaped_content, initial_html):
 </body>
 </html>
     '''
-    
+
     return template
