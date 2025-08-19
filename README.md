@@ -57,7 +57,7 @@ pip install pyexecmd
 2. **Start live preview:**
 
    ```bash
-   pyexecmd serve my_document.pymd --port 8080
+   pyexecmd serve --file my_document.pymd --port 8080
    ```
 
    Then open <http://localhost:8080> in your browser
@@ -245,7 +245,7 @@ PyMD/
 pyexecmd create <filename> [--force]
 
 # Start live preview server
-pyexecmd serve <file> [--port PORT] [--host HOST] [--debug]
+pyexecmd serve [--file FILE] [--port PORT] [--host HOST] [--debug]
 
 # Render PyExecMD to HTML
 pyexecmd render <input> [-o OUTPUT]
