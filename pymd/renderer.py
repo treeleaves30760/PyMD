@@ -501,10 +501,15 @@ class PyMDRenderer:
                         cache_key = f"exec_{code_block_index}_{self._get_code_hash(code_block, variables_snapshot)}"
                         
                         result = self.execute_code(code_block, cache_key)
-                        if result['success'] and result['output'].strip():
-                            output_html = f'<pre class="code-output">{result["output"].strip()}</pre>'
-                            self.add_element(
-                                'code_output', result['output'], output_html)
+                        if result['success']:
+                            if result['output'].strip():
+                                output_html = f'<pre class="code-output">{result["output"].strip()}</pre>'
+                                self.add_element(
+                                    'code_output', result['output'], output_html)
+                        else:
+                            # Display execution error
+                            error_html = f'<pre class="error">Code execution error: {result["error"]}</pre>'
+                            self.add_element('error', result['error'], error_html)
                         
                         code_block_index += 1
                     except Exception as e:
