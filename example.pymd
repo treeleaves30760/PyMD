@@ -20,7 +20,7 @@ version = "0.1.0"
 year = 2025
 
 pymd.text(f"Welcome to **{name}** v{version}!")
-pymd.text(f"Created in {year}, Yeah!")
+pymd.text(f"Created in {year}")
 ```
 
 The variables we just defined are available in subsequent code blocks:
