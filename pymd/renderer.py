@@ -8,7 +8,8 @@ import io
 import base64
 import sys
 import traceback
-from typing import Dict, Any, List, Optional
+import hashlib
+from typing import Dict, Any
 from contextlib import redirect_stdout, redirect_stderr
 
 # Try to import optional dependencies with graceful fallbacks
@@ -109,6 +110,11 @@ class PyMDRenderer:
         self.elements = []
         self.variables = {}
         self.pymd = PyMD(self)
+        # Cache for code execution results
+        self.code_cache = {}
+        self.variable_snapshots = {}
+        self.last_full_content_hash = None
+        self.max_cache_size = 100  # Maximum number of cached results
 
     def add_element(self, element_type: str, content: Any, html: str):
         """Add a rendered element to the document"""
@@ -149,8 +155,54 @@ class PyMDRenderer:
 
         return mock_input
 
-    def execute_code(self, code: str) -> Dict[str, Any]:
-        """Execute Python code and capture output"""
+    def _get_code_hash(self, code: str, variables_snapshot: Dict[str, Any]) -> str:
+        """Generate a hash for code block and variable state"""
+        # Create a combined hash of code content and relevant variables
+        content = code + str(sorted(variables_snapshot.items()))
+        return hashlib.md5(content.encode('utf-8')).hexdigest()
+    
+    def _get_variable_snapshot(self) -> Dict[str, Any]:
+        """Get a snapshot of current variables for caching"""
+        # Only include serializable variables for hashing
+        snapshot = {}
+        for key, value in self.variables.items():
+            try:
+                # Try to serialize the value to check if it's cacheable
+                str(value)
+                snapshot[key] = value
+            except:
+                # Skip non-serializable values
+                pass
+        return snapshot
+
+    def clear_cache(self):
+        """Clear all cached results"""
+        self.code_cache.clear()
+        self.last_full_content_hash = None
+
+    def _manage_cache_size(self):
+        """Remove oldest cache entries if cache is too large"""
+        if len(self.code_cache) > self.max_cache_size:
+            # Remove oldest half of cache entries
+            items_to_remove = len(self.code_cache) - (self.max_cache_size // 2)
+            keys_to_remove = list(self.code_cache.keys())[:items_to_remove]
+            for key in keys_to_remove:
+                del self.code_cache[key]
+
+    def execute_code(self, code: str, cache_key: str = None) -> Dict[str, Any]:
+        """Execute Python code and capture output with caching"""
+        # Generate cache key if not provided
+        if cache_key is None:
+            variables_snapshot = self._get_variable_snapshot()
+            cache_key = self._get_code_hash(code, variables_snapshot)
+        
+        # Check cache first
+        if cache_key in self.code_cache:
+            cached_result = self.code_cache[cache_key]
+            # Restore variables from cache
+            self.variables.update(cached_result['variables'])
+            return cached_result.copy()
+        
         # Capture stdout and stderr
         old_stdout = sys.stdout
         old_stderr = sys.stderr
@@ -161,7 +213,8 @@ class PyMDRenderer:
             'success': True,
             'output': '',
             'error': '',
-            'variables': {}
+            'variables': {},
+            'cache_key': cache_key
         }
 
         try:
@@ -207,12 +260,21 @@ class PyMDRenderer:
                                    if not k.startswith('__') and k not in ['pymd', 'plt', 'pd', 'input']})
 
             result['output'] = stdout_capture.getvalue()
-            result['variables'] = self.variables
+            result['variables'] = self.variables.copy()
+            
+            # Cache the successful result
+            self.code_cache[cache_key] = result.copy()
+            self._manage_cache_size()
 
         except Exception as e:
             result['success'] = False
             result['error'] = traceback.format_exc()
             result['output'] = stdout_capture.getvalue()
+            result['variables'] = self.variables.copy()
+            
+            # Cache the error result too to avoid re-executing failing code
+            self.code_cache[cache_key] = result.copy()
+            self._manage_cache_size()
 
         finally:
             sys.stdout = old_stdout
@@ -316,12 +378,95 @@ class PyMDRenderer:
             self.add_element('table', f'Error: {str(e)}', error_html)
             return error_html
 
+    def _get_content_hash(self, content: str) -> str:
+        """Generate hash for entire content"""
+        return hashlib.md5(content.encode('utf-8')).hexdigest()
+    
+    def _extract_code_blocks(self, content: str) -> Dict[int, str]:
+        """Extract all code blocks with their positions for change detection"""
+        code_blocks = {}
+        lines = content.split('\n')
+        i = 0
+        block_index = 0
+        
+        while i < len(lines):
+            line = lines[i]
+            stripped_line = line.strip()
+            
+            # Handle code blocks with ```
+            if stripped_line == '```':
+                i += 1  # Skip the opening ```
+                code_lines = []
+                start_line = i
+                
+                # Collect all lines until closing ```
+                while i < len(lines):
+                    current_line = lines[i]
+                    if current_line.strip() == '```':
+                        i += 1  # Skip the closing ```
+                        break
+                    code_lines.append(current_line)
+                    i += 1
+                
+                if code_lines:
+                    code_block = '\n'.join(code_lines)
+                    code_blocks[block_index] = {
+                        'code': code_block,
+                        'start_line': start_line,
+                        'type': 'executable'
+                    }
+                    block_index += 1
+                continue
+            
+            # Handle display-only code blocks with ````
+            elif stripped_line == '````':
+                i += 1  # Skip the opening ````
+                code_lines = []
+                
+                # Collect all lines until closing ````
+                while i < len(lines):
+                    current_line = lines[i]
+                    if current_line.strip() == '````':
+                        i += 1  # Skip the closing ````
+                        break
+                    code_lines.append(current_line)
+                    i += 1
+                
+                if code_lines:
+                    code_block = '\n'.join(code_lines)
+                    code_blocks[block_index] = {
+                        'code': code_block,
+                        'type': 'display'
+                    }
+                    block_index += 1
+                continue
+            
+            i += 1
+        
+        return code_blocks
+
     def parse_and_render(self, pymd_content: str) -> str:
         """Parse PyMD content with ``` blocks for code and Markdown syntax for content"""
+        # Check if content has changed significantly
+        content_hash = self._get_content_hash(pymd_content)
+        
+        # For incremental updates, we need to detect what changed
+        if self.last_full_content_hash and self.last_full_content_hash == content_hash:
+            # Content hasn't changed, return cached HTML
+            return self.generate_html()
+        
+        # Content changed, need to re-parse
+        self.last_full_content_hash = content_hash
+        
+        # Extract code blocks for change detection (could be used for future optimizations)
+        # current_code_blocks = self._extract_code_blocks(pymd_content)
+        
+        # Clear elements for fresh render
         self.elements = []
 
         lines = pymd_content.split('\n')
         i = 0
+        code_block_index = 0
 
         while i < len(lines):
             line = lines[i]
@@ -347,18 +492,25 @@ class PyMDRenderer:
                     code_lines.append(current_line)
                     i += 1
 
-                # Execute the collected code block
+                # Execute the collected code block with caching
                 if code_lines:
                     code_block = '\n'.join(code_lines)
                     try:
-                        result = self.execute_code(code_block)
+                        # Create cache key for this specific code block
+                        variables_snapshot = self._get_variable_snapshot()
+                        cache_key = f"exec_{code_block_index}_{self._get_code_hash(code_block, variables_snapshot)}"
+                        
+                        result = self.execute_code(code_block, cache_key)
                         if result['success'] and result['output'].strip():
                             output_html = f'<pre class="code-output">{result["output"].strip()}</pre>'
                             self.add_element(
                                 'code_output', result['output'], output_html)
+                        
+                        code_block_index += 1
                     except Exception as e:
                         error_html = f'<pre class="error">Code execution error: {str(e)}</pre>'
                         self.add_element('error', str(e), error_html)
+                        code_block_index += 1
                 continue
 
             # Handle display-only code blocks with ````
@@ -376,13 +528,24 @@ class PyMDRenderer:
                     code_lines.append(current_line)
                     i += 1
 
-                # Display the code block without execution
+                # Display the code block without execution (cached by content)
                 if code_lines:
                     code_block = '\n'.join(code_lines)
-                    # Process // comments in display blocks
-                    processed_code = self._process_display_comments(code_block)
-                    display_html = f'<pre class="display-code">{processed_code}</pre>'
-                    self.add_element('display_code', code_block, display_html)
+                    cache_key = f"display_{code_block_index}_{hashlib.md5(code_block.encode()).hexdigest()}"
+                    
+                    # Check if we have cached HTML for this display block
+                    if cache_key in self.code_cache:
+                        cached_html = self.code_cache[cache_key]['html']
+                        self.add_element('display_code', code_block, cached_html)
+                    else:
+                        # Process // comments in display blocks
+                        processed_code = self._process_display_comments(code_block)
+                        display_html = f'<pre class="display-code">{processed_code}</pre>'
+                        self.add_element('display_code', code_block, display_html)
+                        # Cache the display HTML
+                        self.code_cache[cache_key] = {'html': display_html}
+                    
+                    code_block_index += 1
                 continue
 
             # Skip // comments
