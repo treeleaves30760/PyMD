@@ -861,6 +861,83 @@ class PyMDRenderer:
 
         return html_template
 
+    def to_markdown(self, pymd_content: str) -> str:
+        """Convert PyMD content to standard Markdown"""
+        lines = pymd_content.split('\n')
+        markdown_lines = []
+        i = 0
+
+        while i < len(lines):
+            line = lines[i]
+            stripped_line = line.strip()
+
+            # Skip empty lines
+            if not stripped_line:
+                markdown_lines.append('')
+                i += 1
+                continue
+
+            # Handle code blocks with ``` (executable code)
+            if stripped_line == '```':
+                markdown_lines.append('```python')
+                i += 1  # Skip the opening ```
+                
+                # Collect all lines until closing ```
+                while i < len(lines):
+                    current_line = lines[i]
+                    if current_line.strip() == '```':
+                        markdown_lines.append('```')
+                        i += 1  # Skip the closing ```
+                        break
+                    markdown_lines.append(current_line)
+                    i += 1
+                continue
+
+            # Handle display-only code blocks with ````
+            if stripped_line == '````':
+                markdown_lines.append('```python')
+                i += 1  # Skip the opening ````
+                
+                # Collect all lines until closing ````
+                while i < len(lines):
+                    current_line = lines[i]
+                    if current_line.strip() == '````':
+                        markdown_lines.append('```')
+                        i += 1  # Skip the closing ````
+                        break
+                    markdown_lines.append(current_line)
+                    i += 1
+                continue
+
+            # Skip // comments
+            if stripped_line.startswith('//'):
+                i += 1
+                continue
+
+            # Handle headers (#, ##, ###, etc.)
+            if stripped_line.startswith('#'):
+                markdown_lines.append(stripped_line)
+                i += 1
+                continue
+
+            # Handle unordered lists (- or tab-)
+            if stripped_line.startswith('-') or line.startswith('\t-'):
+                markdown_lines.append(stripped_line)
+                i += 1
+                continue
+
+            # Handle ordered lists (1., 2., 3., etc.)
+            if re.match(r'^\d+\.\s+', stripped_line):
+                markdown_lines.append(stripped_line)
+                i += 1
+                continue
+
+            # Handle plain text (everything else)
+            markdown_lines.append(stripped_line)
+            i += 1
+
+        return '\n'.join(markdown_lines)
+
     def render_file(self, file_path: str, output_path: str = None) -> str:
         """Render a PyMD file to HTML"""
         with open(file_path, 'r', encoding='utf-8') as f:

@@ -319,6 +319,25 @@ def get_editor_template(mode, filename, escaped_content, initial_html):
             align-items: center;
         }}
         
+        .export-btn {{
+            background: #6f42c1;
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }}
+        
+        .export-btn:hover {{
+            background: #5a2d91;
+        }}
+        
+        .export-btn:disabled {{
+            background: #6c757d;
+            cursor: not-allowed;
+        }}
+        
         .mode-selector {{
             background: rgba(255,255,255,0.2);
             border: 1px solid rgba(255,255,255,0.3);
@@ -654,6 +673,8 @@ def get_editor_template(mode, filename, escaped_content, initial_html):
                 <option value="both" {"selected" if mode == "both" else ""}>Split View</option>
             </select>
             <button class="save-btn" id="saveBtn">💾 Save</button>
+            <button class="export-btn" id="exportHtmlBtn">📄 Export HTML</button>
+            <button class="export-btn" id="exportMdBtn">📝 Export MD</button>
             <div class="live-indicator" id="liveIndicator">🟢 Live</div>
         </div>
     </div>
@@ -1005,6 +1026,10 @@ def get_editor_template(mode, filename, escaped_content, initial_html):
         // Save functionality
         document.getElementById('saveBtn').addEventListener('click', saveFile);
         
+        // Export functionality
+        document.getElementById('exportHtmlBtn').addEventListener('click', exportHtml);
+        document.getElementById('exportMdBtn').addEventListener('click', exportMarkdown);
+        
         function saveFile() {{
             if (!editor) return;
             
@@ -1064,6 +1089,114 @@ def get_editor_template(mode, filename, escaped_content, initial_html):
             }})
             .finally(() => {{
                 saveBtn.disabled = false;
+            }});
+        }}
+        
+        function exportHtml() {{
+            if (!editor) return;
+            
+            const content = editor.getValue();
+            const exportBtn = document.getElementById('exportHtmlBtn');
+            
+            exportBtn.disabled = true;
+            updateStatusText('Exporting to HTML...');
+            
+            fetch('/api/render', {{
+                method: 'POST',
+                headers: {{
+                    'Content-Type': 'application/json',
+                }},
+                body: JSON.stringify({{ content: content }})
+            }})
+            .then(response => response.json())
+            .then(data => {{
+                if (data.success) {{
+                    // Create filename
+                    let filename = '{filename}';
+                    if (filename === 'Blank File') {{
+                        filename = 'export';
+                    }} else if (filename.endsWith('.pymd')) {{
+                        filename = filename.slice(0, -5);
+                    }}
+                    filename += '.html';
+                    
+                    // Create download
+                    const blob = new Blob([data.html], {{ type: 'text/html' }});
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                    
+                    updateStatusText('Exported: ' + filename);
+                    setTimeout(() => updateStatusText('Ready'), 3000);
+                    showToast('HTML exported successfully');
+                }} else {{
+                    updateStatusText('Export failed: ' + (data.error || 'Unknown error'));
+                }}
+            }})
+            .catch(error => {{
+                updateStatusText('Export error: ' + error.message);
+            }})
+            .finally(() => {{
+                exportBtn.disabled = false;
+            }});
+        }}
+        
+        function exportMarkdown() {{
+            if (!editor) return;
+            
+            const content = editor.getValue();
+            const exportBtn = document.getElementById('exportMdBtn');
+            
+            exportBtn.disabled = true;
+            updateStatusText('Exporting to Markdown...');
+            
+            fetch('/api/export/markdown', {{
+                method: 'POST',
+                headers: {{
+                    'Content-Type': 'application/json',
+                }},
+                body: JSON.stringify({{ content: content }})
+            }})
+            .then(response => response.json())
+            .then(data => {{
+                if (data.success) {{
+                    // Create filename
+                    let filename = '{filename}';
+                    if (filename === 'Blank File') {{
+                        filename = 'export';
+                    }} else if (filename.endsWith('.pymd')) {{
+                        filename = filename.slice(0, -5);
+                    }}
+                    filename += '.md';
+                    
+                    // Create download
+                    const blob = new Blob([data.markdown], {{ type: 'text/markdown' }});
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                    
+                    updateStatusText('Exported: ' + filename);
+                    setTimeout(() => updateStatusText('Ready'), 3000);
+                    showToast('Markdown exported successfully');
+                }} else {{
+                    updateStatusText('Export failed: ' + (data.error || 'Unknown error'));
+                }}
+            }})
+            .catch(error => {{
+                updateStatusText('Export error: ' + error.message);
+            }})
+            .finally(() => {{
+                exportBtn.disabled = false;
             }});
         }}
         

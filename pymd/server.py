@@ -87,6 +87,16 @@ class PyMDServer:
             except Exception as e:
                 return jsonify({'success': False, 'error': str(e)})
 
+        @self.app.route('/api/export/markdown', methods=['POST'])
+        def api_export_markdown():
+            """API endpoint for exporting PyExecMD content to Markdown"""
+            try:
+                content = request.json.get('content', '')
+                markdown = self.renderer.to_markdown(content)
+                return jsonify({'success': True, 'markdown': markdown})
+            except Exception as e:
+                return jsonify({'success': False, 'error': str(e)})
+
         @self.app.route('/editor')
         @self.app.route('/editor/<mode>')
         def editor(mode='both'):
@@ -273,7 +283,7 @@ class PyMDServer:
 
         try:
             self.socketio.run(self.app, host=self.host,
-                              port=self.port, debug=debug)
+                              port=self.port, debug=debug, allow_unsafe_werkzeug=True)
         except KeyboardInterrupt:
             print("\nShutting down server...")
         finally:

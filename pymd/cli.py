@@ -12,7 +12,7 @@ from .server import PyMDServer
 
 
 def render_command(args):
-    """Render a PyExecMD file to HTML"""
+    """Render a PyExecMD file to HTML or Markdown"""
     renderer = PyMDRenderer()
 
     if not os.path.exists(args.input):
@@ -20,12 +20,27 @@ def render_command(args):
         return 1
 
     try:
-        html = renderer.render_file(args.input, args.output)
-
-        if args.output:
-            print(f"✅ Successfully rendered '{args.input}' to '{args.output}'")
+        if args.format == 'markdown':
+            # Render to markdown
+            with open(args.input, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            markdown = renderer.to_markdown(content)
+            
+            if args.output:
+                with open(args.output, 'w', encoding='utf-8') as f:
+                    f.write(markdown)
+                print(f"✅ Successfully rendered '{args.input}' to '{args.output}' (Markdown)")
+            else:
+                print(markdown)
         else:
-            print(html)
+            # Render to HTML (default)
+            html = renderer.render_file(args.input, args.output)
+
+            if args.output:
+                print(f"✅ Successfully rendered '{args.input}' to '{args.output}' (HTML)")
+            else:
+                print(html)
 
         return 0
 
@@ -185,10 +200,13 @@ def main():
 
     # Render command
     render_parser = subparsers.add_parser(
-        'render', help='Render PyExecMD file to HTML')
+        'render', help='Render PyExecMD file to HTML or Markdown')
     render_parser.add_argument('input', help='Input PyExecMD file')
     render_parser.add_argument(
-        '-o', '--output', help='Output HTML file (default: print to stdout)')
+        '-o', '--output', help='Output file (default: print to stdout)')
+    render_parser.add_argument(
+        '-f', '--format', choices=['html', 'markdown'], default='html',
+        help='Output format (default: html)')
     render_parser.set_defaults(func=render_command)
 
     # Serve command

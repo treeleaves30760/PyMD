@@ -16,6 +16,8 @@ PyMD is a revolutionary markup language that combines familiar markdown syntax w
 - **⚡ Fast Rendering**: Efficient parsing and rendering engine
 - **🔄 Auto-Refresh**: Changes reflect immediately in the live preview
 - **💬 Smart Comments**: Display blocks use `//` for cleaner code presentation
+- **📄 Export Options**: Export to HTML or standard Markdown formats
+- **🖱️ One-Click Export**: Export buttons in the web editor interface
 
 ## 🚀 Quick Start
 
@@ -48,27 +50,71 @@ pip install pyexecmd
 
 ## Usage
 
+### For Conda Users (Recommended Development Setup)
+
+If you're using conda for development, first activate the environment:
+
+```bash
+# Initialize conda and activate environment
+source /opt/miniconda3/etc/profile.d/conda.sh && conda activate PyMD
+
+# Verify activation
+python --version && which python
+```
+
+Then use standard Python commands:
+
+```bash
+# Create a new PyMD document
+python -m pymd.cli create my_document.pymd
+
+# Start live preview with web editor
+python -m pymd.cli serve --file my_document.pymd --port 8080
+
+# Render to HTML
+python -m pymd.cli render my_document.pymd -o output.html
+
+# Render to Markdown (NEW!)
+python -m pymd.cli render my_document.pymd -f markdown -o output.md
+```
+
+### For PyPI Installation
+
 1. **Create a new PyMD document:**
 
    ```bash
    pyexecmd create my_document.pymd
    ```
 
-2. **Start live preview:**
+2. **Start live preview with web editor:**
 
    ```bash
    pyexecmd serve --file my_document.pymd --port 8080
    ```
 
-   Then open <http://localhost:8080> in your browser
+   Then open <http://localhost:8080/editor> in your browser for the full editor experience, or <http://localhost:8080> for display-only view.
 
    > **Note for macOS users:** Port 5000 is often used by AirPlay. Use `--port 8000` or another port to avoid conflicts.
 
-3. **Render to HTML:**
+3. **Export Options:**
 
    ```bash
+   # Render to HTML
    pyexecmd render my_document.pymd -o output.html
+   
+   # Render to Markdown (NEW!)
+   pyexecmd render my_document.pymd -f markdown -o output.md
    ```
+
+### Web Editor Features
+
+The web editor (available at `/editor`) includes:
+
+- **📝 Split-view editing**: Side-by-side editor and live preview
+- **🖱️ One-click export**: Export HTML and Markdown buttons in the interface
+- **⚡ Live rendering**: Ctrl+S to execute code and update preview
+- **💾 File management**: Save and download your documents
+- **🎨 Syntax highlighting**: Python syntax highlighting with PyMD-specific features
 
 ## 📝 PyMD Syntax
 
@@ -275,11 +321,38 @@ PyMD/
 # Create new PyExecMD file from template
 pyexecmd create <filename> [--force]
 
-# Start live preview server
-pyexecmd serve [--file FILE] [--port PORT] [--host HOST] [--debug]
+# Start live preview server with web editor
+pyexecmd serve [--file FILE] [--port PORT] [--host HOST] [--debug] [--mode {editing,viewing,both}]
 
-# Render PyExecMD to HTML
-pyexecmd render <input> [-o OUTPUT]
+# Render PyExecMD to HTML (default)
+pyexecmd render <input> [-o OUTPUT] [-f html]
+
+# Render PyExecMD to Markdown (NEW!)
+pyexecmd render <input> [-o OUTPUT] -f markdown
+
+# Render options
+pyexecmd render <input> --format {html,markdown} --output <filename>
+```
+
+#### Command Examples
+
+```bash
+# Conda development setup
+source /opt/miniconda3/etc/profile.d/conda.sh && conda activate PyMD
+
+# Create and serve
+python -m pymd.cli create tutorial.pymd
+python -m pymd.cli serve --file tutorial.pymd --port 8080
+
+# Export to different formats
+python -m pymd.cli render tutorial.pymd -o tutorial.html          # HTML export
+python -m pymd.cli render tutorial.pymd -f markdown -o tutorial.md # Markdown export
+python -m pymd.cli render tutorial.pymd -f markdown               # Print to stdout
+
+# PyPI installation
+pyexecmd create tutorial.pymd
+pyexecmd serve --file tutorial.pymd --port 8080
+pyexecmd render tutorial.pymd -f markdown -o tutorial.md
 ```
 
 ## 🎯 Use Cases
@@ -301,6 +374,27 @@ Check out `example.pymd` for a comprehensive demonstration of PyMD features, inc
 - Interactive tables with pandas
 - Mixed content workflow
 - Real-time preview updates
+- Export functionality (HTML and Markdown)
+
+### Export Examples
+
+**Export to HTML for presentations and sharing:**
+```bash
+python -m pymd.cli render example.pymd -o presentation.html
+```
+
+**Export to Markdown for documentation and version control:**
+```bash
+python -m pymd.cli render example.pymd -f markdown -o documentation.md
+```
+
+**Web Editor Export:**
+1. Open `http://localhost:8080/editor` in your browser
+2. Edit your PyMD content
+3. Click **📄 Export HTML** for a complete HTML file
+4. Click **📝 Export MD** for a clean Markdown file
+
+The exported Markdown maintains the structure while converting PyMD-specific syntax to standard Markdown format, making it compatible with GitHub, GitLab, and other Markdown renderers.
 
 ## 🤝 Contributing
 
