@@ -5,8 +5,10 @@
 # ```
 # This is comment in python
 # The below part will print both in python command and pymd renderer
-import pandas as pd
+
 import matplotlib.pyplot as plt
+import numpy as np
+
 print("## This should be rendered as h2")
 
 a = 20
@@ -28,11 +30,11 @@ print(f"The answer is {a+b}")
 # | Jill | 40 | Female | San Francisco |
 #
 # ```
-df = pd.DataFrame({
-    'Name': ['John', 'Jane', 'Jim', 'Jill', 'Jack', 'Jill'],
-    'Age': [25, 30, 35, 40, 45, 40],
-    'Gender': ['Male', 'Female', 'Male', 'Female', 'Male', 'Female'],
-    'City': ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Miami', 'San Francisco']
-})
+# This is a plot of the data
+x = np.linspace(0, 10, 100)
+y = np.sin(x)
+plt.plot(x, y)
+plt.show()
 # ```
+#
 #

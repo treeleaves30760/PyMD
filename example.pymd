@@ -17,7 +17,7 @@
 # ```
 # Define some variables
 name = "PyMD"
-version = "2.0" 
+version = "0.1.6" 
 year = "2025"
 
 print(f"## Welcome to **{name}** v{version}!")

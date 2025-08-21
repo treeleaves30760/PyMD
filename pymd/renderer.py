@@ -9,7 +9,9 @@ import base64
 import sys
 import traceback
 import hashlib
-from typing import Dict, Any
+import os
+import uuid
+from typing import Dict, Any, Optional
 from contextlib import redirect_stdout, redirect_stderr
 
 # Try to import optional dependencies with graceful fallbacks
@@ -106,7 +108,7 @@ class PyMDRenderer:
     Main renderer class for PyMD documents
     """
 
-    def __init__(self):
+    def __init__(self, output_dir: Optional[str] = None):
         self.elements = []
         self.variables = {}
         self.pymd = PyMD(self)
@@ -115,6 +117,13 @@ class PyMDRenderer:
         self.variable_snapshots = {}
         self.last_full_content_hash = None
         self.max_cache_size = 100  # Maximum number of cached results
+        
+        # Image handling
+        self.output_dir = output_dir or os.getcwd()
+        self.images_dir = os.path.join(self.output_dir, 'images')
+        self.image_counter = 0
+        self.captured_images = []  # Store info about captured images
+        self._custom_plt = None  # Store custom plt object for reuse
 
     def add_element(self, element_type: str, content: Any, html: str):
         """Add a rendered element to the document"""
@@ -123,6 +132,75 @@ class PyMDRenderer:
             'content': content,
             'html': html
         })
+
+    def _ensure_images_dir(self):
+        """Ensure the images directory exists"""
+        if not os.path.exists(self.images_dir):
+            os.makedirs(self.images_dir, exist_ok=True)
+
+    def _save_figure_to_file(self, fig, filename: str = None, caption: str = '') -> Dict[str, str]:
+        """Save matplotlib figure to file and return image info"""
+        self._ensure_images_dir()
+        
+        if filename is None:
+            self.image_counter += 1
+            filename = f"plot_{self.image_counter}_{uuid.uuid4().hex[:8]}.png"
+        
+        file_path = os.path.join(self.images_dir, filename)
+        relative_path = f"images/{filename}"
+        
+        # Save figure to file
+        fig.savefig(file_path, format='png', bbox_inches='tight', dpi=150)
+        
+        # Also create base64 for fallback
+        img_buffer = io.BytesIO()
+        fig.savefig(img_buffer, format='png', bbox_inches='tight', dpi=150)
+        img_buffer.seek(0)
+        img_base64 = base64.b64encode(img_buffer.getvalue()).decode()
+        
+        image_info = {
+            'filename': filename,
+            'file_path': file_path,
+            'relative_path': relative_path,
+            'base64': img_base64,
+            'caption': caption
+        }
+        
+        self.captured_images.append(image_info)
+        return image_info
+
+    def _create_custom_plt_show(self):
+        """Create a custom plt.show() function that captures and renders plots"""
+        def custom_show(*args, **kwargs):
+            if not MATPLOTLIB_AVAILABLE:
+                return
+            
+            # Get current figure
+            fig = plt.gcf()
+            
+            # Check if figure has any content
+            if len(fig.get_axes()) > 0:
+                # Save figure to file and get info
+                image_info = self._save_figure_to_file(fig)
+                
+                # Create HTML for both file-based and base64 display
+                html = f'''
+                <div class="image-container">
+                    <img src="{image_info['relative_path']}" 
+                         alt="{image_info['caption']}" 
+                         style="max-width: 100%; height: auto;"
+                         onerror="this.onerror=null; this.src='data:image/png;base64,{image_info['base64']}';">
+                    {f'<p class="image-caption">{image_info["caption"]}</p>' if image_info["caption"] else ''}
+                </div>
+                '''
+                
+                # Add to elements with the image info for matching in markdown generation
+                self.add_element('image', image_info, html)
+                
+                # Clear the figure to prevent memory leaks
+                plt.clf()
+        
+        return custom_show
 
     def _parse_input_mocks(self, code: str) -> Dict[str, str]:
         """Parse input mock values from comments in the format: # input: value"""
@@ -229,6 +307,19 @@ class PyMDRenderer:
                 'pd': pd,
                 **self.variables
             }
+            
+            # Override plt.show with our custom function if matplotlib is available
+            if MATPLOTLIB_AVAILABLE and plt is not None:
+                if self._custom_plt is None:
+                    # Create custom plt object only once
+                    self._custom_plt = type('CustomPlt', (), {})()
+                    # Copy all plt attributes
+                    for attr in dir(plt):
+                        if not attr.startswith('_'):
+                            setattr(self._custom_plt, attr, getattr(plt, attr))
+                    # Override show method
+                    self._custom_plt.show = self._create_custom_plt_show()
+                exec_globals['plt'] = self._custom_plt
 
             # Override input function if there are input() calls in the code
             if 'input(' in code:
@@ -255,9 +346,13 @@ class PyMDRenderer:
             # Execute the code
             exec(code, exec_globals)
 
-            # Update variables
-            self.variables.update({k: v for k, v in exec_globals.items()
-                                   if not k.startswith('__') and k not in ['pymd', 'plt', 'pd', 'input']})
+            # Update variables but preserve the custom_plt reference for consistent image counter
+            updated_vars = {k: v for k, v in exec_globals.items()
+                          if not k.startswith('__') and k not in ['pymd', 'pd', 'input']}
+            # Don't update 'plt' to preserve our custom wrapper
+            if 'plt' in updated_vars:
+                del updated_vars['plt']
+            self.variables.update(updated_vars)
 
             result['output'] = stdout_capture.getvalue()
             result['variables'] = self.variables.copy()
@@ -283,7 +378,7 @@ class PyMDRenderer:
         return result
 
     def render_image(self, plot_obj=None, caption: str = '') -> str:
-        """Render matplotlib plot to base64 encoded image"""
+        """Render matplotlib plot to both file and base64 encoded image"""
         try:
             if plot_obj is None:
                 # If no specific plot object, use current figure
@@ -291,23 +386,23 @@ class PyMDRenderer:
             else:
                 fig = plot_obj
 
-            # Save plot to base64 string
-            img_buffer = io.BytesIO()
-            fig.savefig(img_buffer, format='png', bbox_inches='tight', dpi=150)
-            img_buffer.seek(0)
-            img_str = base64.b64encode(img_buffer.getvalue()).decode()
+            # Save figure to file and get info
+            image_info = self._save_figure_to_file(fig, caption=caption)
 
             # Clear the current figure to prevent memory leaks
             plt.clf()
 
             html = f'''
             <div class="image-container">
-                <img src="data:image/png;base64,{img_str}" alt="{caption}" style="max-width: 100%; height: auto;">
+                <img src="{image_info['relative_path']}" 
+                     alt="{caption}" 
+                     style="max-width: 100%; height: auto;"
+                     onerror="this.onerror=null; this.src='data:image/png;base64,{image_info['base64']}';">
                 {f'<p class="image-caption">{caption}</p>' if caption else ''}
             </div>
             '''
 
-            self.add_element('image', caption, html)
+            self.add_element('image', image_info, html)
             return html
 
         except Exception as e:
@@ -1355,6 +1450,73 @@ class PyMDRenderer:
             i += 1
 
         return '\n'.join(markdown_lines)
+
+    def generate_markdown(self) -> str:
+        """Generate markdown from rendered elements (including captured images)"""
+        markdown_parts = []
+        
+        for element in self.elements:
+            element_type = element['type']
+            content = element['content']
+            
+            if element_type.startswith('h'):
+                # Headers
+                level = int(element_type[1])
+                markdown_parts.append('#' * level + ' ' + content)
+                markdown_parts.append('')
+            elif element_type == 'text':
+                # Regular text (process bold formatting)
+                text = content.replace('<strong>', '**').replace('</strong>', '**')
+                markdown_parts.append(text)
+                markdown_parts.append('')
+            elif element_type == 'image':
+                # Images - content now contains the image_info dict
+                if isinstance(content, dict) and 'relative_path' in content:
+                    # Use the image info directly
+                    markdown_parts.append(f"![{content['caption']}]({content['relative_path']})")
+                else:
+                    # Fallback for legacy images or text-based images
+                    markdown_parts.append(f"![{content}]({content})")
+                markdown_parts.append('')
+            elif element_type == 'ul':
+                # Unordered lists
+                for item in content:
+                    item_text = item.replace('<strong>', '**').replace('</strong>', '**')
+                    markdown_parts.append(f"- {item_text}")
+                markdown_parts.append('')
+            elif element_type == 'ol':
+                # Ordered lists
+                for i, item in enumerate(content, 1):
+                    item_text = item.replace('<strong>', '**').replace('</strong>', '**')
+                    markdown_parts.append(f"{i}. {item_text}")
+                markdown_parts.append('')
+            elif element_type == 'table':
+                # Tables - convert from rendered table lines back to markdown
+                if isinstance(content, list) and len(content) > 0:
+                    # If content is the original table lines, use them
+                    for line in content:
+                        if line.strip():
+                            markdown_parts.append(line)
+                    markdown_parts.append('')
+                else:
+                    # Fallback for other table formats
+                    markdown_parts.append("| Table Data |")
+                    markdown_parts.append("| --- |")
+                    markdown_parts.append('')
+            elif element_type == 'error':
+                # Error blocks
+                markdown_parts.append("```")
+                markdown_parts.append(f"Error: {content}")
+                markdown_parts.append("```")
+                markdown_parts.append('')
+            elif element_type == 'display_code':
+                # Display code blocks
+                markdown_parts.append("```python")
+                markdown_parts.append(content)
+                markdown_parts.append("```")
+                markdown_parts.append('')
+        
+        return '\n'.join(markdown_parts).strip()
 
     def render_file(self, file_path: str, output_path: str = None) -> str:
         """Render a PyMD file to HTML"""

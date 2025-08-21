@@ -2,6 +2,8 @@
 
 PyMD is a revolutionary markup language that creates **executable Python files** that also render beautifully as markdown documents. All markdown content is prefixed with `#` (making it Python comments), while code blocks contain regular executable Python code that prints markdown during rendering.
 
+![Screen Shot](./v0.1.6.png)
+
 ## ✨ Features
 
 - **🐍 Executable Python Files**: Files can be run directly with `python filename.pymd`
@@ -13,12 +15,15 @@ PyMD is a revolutionary markup language that creates **executable Python files**
 - **🔗 Variable Persistence**: Variables persist across code blocks in the same document
 - **🔴 Live Preview**: Real-time rendering with auto-refresh as you edit
 - **📊 Rich Visualizations**: Built-in support for matplotlib, pandas, and other data science libraries
+- **🖼️ Automatic Image Capture**: `plt.show()` automatically saves and renders plots in HTML and Markdown
+- **📋 Table Support**: Automatic detection and rendering of markdown tables with proper formatting
 - **🧮 Dynamic Content**: Execute Python code and display results inline
 - **📱 Beautiful Output**: Clean, responsive HTML with modern styling
 - **⚡ Fast Rendering**: Efficient parsing and rendering engine with caching
 - **🔄 Auto-Refresh**: Changes reflect immediately in the live preview
 - **💬 Smart Comments**: Display blocks use `//` for cleaner code presentation
-- **📄 Export Options**: Export to HTML or standard Markdown formats
+- **📄 Export Options**: Export to HTML or standard Markdown formats with embedded images
+- **🖼️ Image Management**: Automatic file organization with unique naming and format flexibility
 - **🖱️ One-Click Export**: Export buttons in the web editor interface
 - **↔️ Backward Compatible**: Supports both executable and legacy syntax
 
@@ -209,6 +214,93 @@ print(f"The calculation result: **{x * 2}**")  # Bold text
 # ````
 ```
 
+### 📋 Table Support
+
+PyMD automatically detects and renders markdown tables with proper formatting:
+
+```python
+# # Employee Report
+#
+# Here's our team data:
+#
+# | Name | Age | Department | Score |
+# | --- | --- | --- | --- |
+# | Alice | 28 | Engineering | 95 |
+# | Bob | 32 | Sales | 87 |
+# | Charlie | 29 | Marketing | 92 |
+#
+# You can also generate tables dynamically from code:
+#
+# ```
+import pandas as pd
+
+# Create sample data
+employees = pd.DataFrame({
+    'Name': ['Diana', 'Eve', 'Frank'], 
+    'Age': [26, 31, 35],
+    'Department': ['Design', 'HR', 'Finance'],
+    'Score': [89, 94, 88]
+})
+
+print("## Dynamic Employee Data")
+print()
+for _, row in employees.iterrows():
+    print(f"| {row['Name']} | {row['Age']} | {row['Department']} | {row['Score']} |")
+# ```
+```
+
+### 🖼️ Automatic Image Rendering
+
+PyMD automatically captures and renders matplotlib plots when you use `plt.show()`:
+
+```python
+# # Data Visualization Report
+#
+# Let's create some visualizations:
+#
+# ```
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Create sample data
+x = np.linspace(0, 10, 100)
+y = np.sin(x)
+
+# Create plot
+plt.figure(figsize=(10, 6))
+plt.plot(x, y, 'b-', linewidth=2, label='sin(x)')
+plt.title('Sine Wave Visualization')
+plt.xlabel('X values')
+plt.ylabel('Y values')
+plt.legend()
+plt.grid(True, alpha=0.3)
+
+# This automatically captures and renders the plot!
+plt.show()
+# ```
+#
+# ```
+# Create another plot
+y2 = np.cos(x)
+plt.figure(figsize=(10, 6))
+plt.plot(x, y2, 'r-', linewidth=2, label='cos(x)')
+plt.title('Cosine Wave Visualization')
+plt.xlabel('X values')
+plt.ylabel('Y values')
+plt.legend()
+plt.grid(True, alpha=0.3)
+
+# Multiple plots are automatically captured
+plt.show()
+# ```
+#
+# Each `plt.show()` call automatically:
+# - **Saves the plot** as a PNG file in an `images/` directory
+# - **Renders in HTML** with file references and base64 fallbacks
+# - **Embeds in Markdown** using standard `![](images/filename.png)` syntax
+# - **Generates unique filenames** to avoid conflicts
+```
+
 ### 📊 Complete Example
 
 **Data Analysis with Print-to-Markdown:**
@@ -314,6 +406,8 @@ print(f"Factorial of 5 is: **{result}**")
 - **💬 Interactive Input**: Use `input()` with mock values for non-interactive execution
 - **🎨 Clean Rendering**: `#` prefixes hidden during HTML/Markdown export
 - **📊 Rich Output**: Print statements can output headers, lists, tables, even HTML
+- **🖼️ Automatic Plot Capture**: `plt.show()` calls automatically save and render images
+- **📋 Smart Table Rendering**: Markdown tables are automatically detected and styled
 - **💡 Smart Comments**: Use `//` in display blocks for cleaner presentation
 - **↔️ Dual Purpose**: Same file serves as Python script AND beautiful document
 
@@ -347,6 +441,20 @@ print(f"Factorial of 5 is: **{result}**")
 # Text with **bold** and *italic* formatting.
 # 
 # // This is a comment (ignored during rendering)
+```
+
+**Tables:**
+
+```python
+# | Header 1 | Header 2 | Header 3 |
+# | --- | --- | --- |
+# | Cell 1 | Cell 2 | Cell 3 |
+# | Row 2 | Data | More Data |
+#
+# Tables support alignment:
+# | Left | Center | Right |
+# | :--- | :---: | ---: |
+# | Left aligned | Centered | Right aligned |
 ```
 
 ### 🐍 Code Blocks (Regular Python)
@@ -391,6 +499,35 @@ for i, value in enumerate(data, 1):
 # ```
 ```
 
+### 🖼️ Automatic Plot Rendering
+
+Matplotlib plots are automatically captured when using `plt.show()`:
+
+```python
+# ```
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Create visualization
+x = np.linspace(0, 10, 100)
+y = np.sin(x)
+plt.figure(figsize=(8, 6))
+plt.plot(x, y, 'b-', linewidth=2)
+plt.title('Automatic Plot Capture')
+plt.grid(True)
+
+# Automatically saves image and includes in output
+plt.show()
+# ```
+```
+
+**Image Features:**
+
+- **Automatic saving**: Images saved to `images/` directory
+- **Unique filenames**: `plot_1_abc123.png` format prevents conflicts  
+- **HTML fallback**: Base64 encoding for portability
+- **Markdown compatible**: Standard `![](images/filename.png)` syntax
+
 ### 💡 Best Practices
 
 - **File Structure**: Start with `# # Title` as the main header
@@ -399,6 +536,10 @@ for i, value in enumerate(data, 1):
 - **Display Code**: Use `# ````...# ``````` for code examples that shouldn't execute
 - **Variables**: Define variables in code blocks and reference them in print statements
 - **Clean Syntax**: Keep markdown content in `#` prefixed sections, code in blocks
+- **Tables**: Use standard markdown table syntax with `|` separators for static tables
+- **Images**: Use `plt.show()` for automatic plot capture, or `pymd.image()` for manual control
+- **File Organization**: Images are saved to `images/` directory relative to output file
+- **Performance**: Large plots are automatically optimized for web display
 
 ### CLI Commands
 
@@ -531,14 +672,16 @@ python -m pymd.cli serve --file example.pymd --port 8080
 
 ## 🎯 Use Cases
 
-- **📊 Data Science Reports**: Python scripts that execute analysis AND generate beautiful reports
-- **📚 Executable Documentation**: Documentation that actually runs and validates itself
-- **🎓 Interactive Tutorials**: Learning materials that students can execute and modify
-- **📈 Living Dashboards**: Python scripts that generate dynamic visual reports
-- **🔬 Reproducible Research**: Research papers where the code actually runs
-- **🧪 Literate Programming**: Self-documenting code through executable markdown comments
-- **📋 Technical Specifications**: Specs that include working code examples
-- **🤖 AI/ML Workflows**: Machine learning pipelines with embedded documentation
+- **📊 Data Science Reports**: Python scripts that execute analysis AND generate beautiful reports with automatic plot capture
+- **📚 Executable Documentation**: Documentation that actually runs and validates itself, with embedded visualizations
+- **🎓 Interactive Tutorials**: Learning materials that students can execute and modify, featuring live charts and tables
+- **📈 Living Dashboards**: Python scripts that generate dynamic visual reports with automatic image saving
+- **🔬 Reproducible Research**: Research papers where the code actually runs and produces publication-ready figures
+- **🧪 Literate Programming**: Self-documenting code through executable markdown comments with inline visualizations
+- **📋 Technical Specifications**: Specs that include working code examples and automatically generated plots
+- **🤖 AI/ML Workflows**: Machine learning pipelines with embedded documentation and automatic model visualization
+- **📑 Business Reports**: Automated reports with data tables and charts that update when code runs
+- **🎨 Presentation Materials**: Technical presentations that combine code, explanation, and live visualizations
 
 ## 📁 Project Structure
 

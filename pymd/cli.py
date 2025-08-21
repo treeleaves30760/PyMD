@@ -13,7 +13,9 @@ from .server import PyMDServer
 
 def render_command(args):
     """Render a PyExecMD file to HTML or Markdown"""
-    renderer = PyMDRenderer()
+    # Set output directory for image saving
+    output_dir = os.path.dirname(os.path.abspath(args.output)) if args.output else os.path.dirname(os.path.abspath(args.input))
+    renderer = PyMDRenderer(output_dir=output_dir)
 
     if not os.path.exists(args.input):
         print(f"Error: Input file '{args.input}' does not exist")
@@ -21,16 +23,22 @@ def render_command(args):
 
     try:
         if args.format == 'markdown':
-            # Render to markdown
+            # Execute the PyMD content to capture elements and images
             with open(args.input, 'r', encoding='utf-8') as f:
                 content = f.read()
             
-            markdown = renderer.to_markdown(content)
+            # First parse and render to capture all elements and images
+            renderer.parse_and_render(content)
+            
+            # Then generate markdown from the rendered elements
+            markdown = renderer.generate_markdown()
             
             if args.output:
                 with open(args.output, 'w', encoding='utf-8') as f:
                     f.write(markdown)
                 print(f"✅ Successfully rendered '{args.input}' to '{args.output}' (Markdown)")
+                if renderer.captured_images:
+                    print(f"📷 Captured {len(renderer.captured_images)} image(s) in '{renderer.images_dir}'")
             else:
                 print(markdown)
         else:
@@ -39,6 +47,8 @@ def render_command(args):
 
             if args.output:
                 print(f"✅ Successfully rendered '{args.input}' to '{args.output}' (HTML)")
+                if renderer.captured_images:
+                    print(f"📷 Captured {len(renderer.captured_images)} image(s) in '{renderer.images_dir}'")
             else:
                 print(html)
 
