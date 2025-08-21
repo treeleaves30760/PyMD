@@ -7,7 +7,7 @@ PyMD is a revolutionary markup language that creates **executable Python files**
 - **🐍 Executable Python Files**: Files can be run directly with `python filename.pymd`
 - **📝 Commented Markdown**: All markdown content is prefixed with `#` (Python comments)
 - **🖨️ Print-to-Markdown**: Python `print()` statements output markdown content during rendering
-- **🎨 Dual Code Block Types**: 
+- **🎨 Dual Code Block Types**:
   - **``` (3 backticks)**: Execute Python code and process print output as markdown
   - **```` (4 backticks)**: Display code with syntax highlighting only
 - **🔗 Variable Persistence**: Variables persist across code blocks in the same document
@@ -122,6 +122,7 @@ The web editor (available at `/editor`) includes:
 ## 📝 PyMD Syntax
 
 PyMD files are **executable Python scripts** where:
+
 - **Markdown content** is prefixed with `#` (Python comments)
 - **Code blocks** contain regular Python code that prints markdown
 - **Print output** becomes rendered markdown content during PyMD rendering
@@ -307,7 +308,7 @@ print(f"Factorial of 5 is: **{result}**")
 - **📝 Commented Markdown**: All markdown content prefixed with `#` (Python comments)
 - **🖨️ Print-to-Markdown**: Use `print()` to output markdown that gets rendered
 - **🔗 Variable Persistence**: Variables persist across all code in the file
-- **📦 Two Code Block Types**: 
+- **📦 Two Code Block Types**:
   - **``` (3 backticks)**: Execute Python and process print output as markdown
   - **```` (4 backticks)**: Display code with syntax highlighting (no execution)
 - **💬 Interactive Input**: Use `input()` with mock values for non-interactive execution
@@ -321,6 +322,7 @@ print(f"Factorial of 5 is: **{result}**")
 ### 📝 Markdown Content (All prefixed with `#`)
 
 **Headers:**
+
 ```python
 # # Level 1 Header
 # ## Level 2 Header  
@@ -328,6 +330,7 @@ print(f"Factorial of 5 is: **{result}**")
 ```
 
 **Lists:**
+
 ```python
 # - Unordered list item
 # - Another item
@@ -337,6 +340,7 @@ print(f"Factorial of 5 is: **{result}**")
 ```
 
 **Text and Formatting:**
+
 ```python
 # Regular paragraph text.
 # 
@@ -348,6 +352,7 @@ print(f"Factorial of 5 is: **{result}**")
 ### 🐍 Code Blocks (Regular Python)
 
 **Executable Code Block:**
+
 ```python
 # ```
 # Comments inside code blocks (optional)
@@ -360,6 +365,7 @@ print("- Second result")  # Another list item
 ```
 
 **Display-Only Code Block:**
+
 ```python
 # ````
 # def example_function():
@@ -456,6 +462,7 @@ print(f"The answer is: **{a + b}**")
 ```
 
 **Usage:**
+
 - **Run as Python**: `python example-simple.pymd`
 - **Render to HTML**: `python -m pymd.cli render example-simple.pymd -o output.html`
 
@@ -474,6 +481,7 @@ Check out `example.pymd` for a full demonstration including:
 ### Complex Example (`example-complex.pymd`)
 
 Advanced features including:
+
 - **Machine learning model loading**
 - **Error handling and device management**
 - **AI text generation integration**
@@ -482,33 +490,39 @@ Advanced features including:
 ### 🚀 Quick Example Usage
 
 **1. Run as executable Python:**
+
 ```bash
 python example.pymd
 ```
 
 **2. Render as beautiful HTML:**
+
 ```bash
 python -m pymd.cli render example.pymd -o presentation.html
 ```
 
 **3. Export to standard Markdown:**
+
 ```bash
 python -m pymd.cli render example.pymd -f markdown -o documentation.md
 ```
 
 **4. Live editor with preview:**
+
 ```bash
 python -m pymd.cli serve --file example.pymd --port 8080
 # Open http://localhost:8080/editor in your browser
 ```
 
 **How Export Works:**
+
 - **HTML Export**: Full rendering with executed code output and styled markdown
 - **Markdown Export**: Removes `#` prefixes and converts to standard markdown
 - **Source Files**: Remain executable Python scripts with commented markdown
 - **Compatibility**: Exported markdown works with GitHub, GitLab, and other renderers
 
 **Web Editor Features:**
+
 1. **Live Editing**: Open `http://localhost:8080/editor` in your browser
 2. **Syntax Highlighting**: `#` prefixed markdown and Python code blocks
 3. **Live Preview**: See rendered output in real-time

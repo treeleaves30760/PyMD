@@ -5,6 +5,8 @@
 # ```
 # This is comment in python
 # The below part will print both in python command and pymd renderer
+import pandas as pd
+import matplotlib.pyplot as plt
 print("## This should be rendered as h2")
 
 a = 20
@@ -12,5 +14,25 @@ b = 30
 print(f"The answer is {a+b}")
 # ```
 #
-# - This is a unordered list in markdown  
+# - This is a unordered list in markdown
 # 1. This is a ordered list in markdown
+#
+# This is a table in markdown
+# | Name | Age | Gender | City |
+# | --- | --- | --- | --- |
+# | John | 25 | Male | New York |
+# | Jane | 30 | Female | Los Angeles |
+# | Jim | 35 | Male | Chicago |
+# | Jill | 40 | Female | Houston |
+# | Jack | 45 | Male | Miami |
+# | Jill | 40 | Female | San Francisco |
+#
+# ```
+df = pd.DataFrame({
+    'Name': ['John', 'Jane', 'Jim', 'Jill', 'Jack', 'Jill'],
+    'Age': [25, 30, 35, 40, 45, 40],
+    'Gender': ['Male', 'Female', 'Male', 'Female', 'Male', 'Female'],
+    'City': ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Miami', 'San Francisco']
+})
+# ```
+#

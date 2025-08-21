@@ -320,13 +320,95 @@ class PyMDRenderer:
         # Replace **text** with <strong>text</strong>
         return re.sub(r'\*\*(.*?)\*\*', r'<strong>\1</strong>', text)
     
+    def _process_markdown_table(self, table_lines: list) -> str:
+        """Process markdown table syntax into HTML"""
+        if len(table_lines) < 2:
+            return None
+        
+        # Parse header row
+        header_line = table_lines[0].strip()
+        if not header_line.startswith('|') or not header_line.endswith('|'):
+            # Try to handle tables without outer pipes
+            header_cells = [cell.strip() for cell in header_line.split('|')]
+        else:
+            # Remove outer pipes and split
+            header_cells = [cell.strip() for cell in header_line[1:-1].split('|')]
+        
+        # Check if second line is separator (like |---|---|)
+        separator_line = table_lines[1].strip()
+        is_separator = re.match(r'^\|?[\s\-\|:]+\|?$', separator_line)
+        
+        # Extract alignment info from separator if it exists
+        alignments = []
+        if is_separator:
+            if not separator_line.startswith('|') or not separator_line.endswith('|'):
+                sep_cells = separator_line.split('|')
+            else:
+                sep_cells = separator_line[1:-1].split('|')
+            
+            for cell in sep_cells:
+                cell = cell.strip()
+                if cell.startswith(':') and cell.endswith(':'):
+                    alignments.append('center')
+                elif cell.endswith(':'):
+                    alignments.append('right')
+                else:
+                    alignments.append('left')
+            
+            # Data rows start from index 2
+            data_start = 2
+        else:
+            # No separator, all data including second row
+            alignments = ['left'] * len(header_cells)
+            data_start = 1
+        
+        # Build HTML table
+        html = '<table class="pymd-table">\n'
+        
+        # Header
+        html += '  <thead>\n    <tr>\n'
+        for i, header in enumerate(header_cells):
+            align = alignments[i] if i < len(alignments) else 'left'
+            style = f' style="text-align: {align}"' if align != 'left' else ''
+            processed_header = self._process_bold_text_in_content(header)
+            html += f'      <th{style}>{processed_header}</th>\n'
+        html += '    </tr>\n  </thead>\n'
+        
+        # Body
+        if data_start < len(table_lines):
+            html += '  <tbody>\n'
+            for row_line in table_lines[data_start:]:
+                row_line = row_line.strip()
+                if not row_line:
+                    continue
+                
+                # Parse data row
+                if not row_line.startswith('|') or not row_line.endswith('|'):
+                    data_cells = [cell.strip() for cell in row_line.split('|')]
+                else:
+                    data_cells = [cell.strip() for cell in row_line[1:-1].split('|')]
+                
+                html += '    <tr>\n'
+                for i, cell in enumerate(data_cells):
+                    align = alignments[i] if i < len(alignments) else 'left'
+                    style = f' style="text-align: {align}"' if align != 'left' else ''
+                    processed_cell = self._process_bold_text_in_content(cell)
+                    html += f'      <td{style}>{processed_cell}</td>\n'
+                html += '    </tr>\n'
+            html += '  </tbody>\n'
+        
+        html += '</table>'
+        return html
+    
     def _process_print_output_as_markdown(self, output: str):
         """Process print output lines as markdown content"""
         lines = output.split('\n')
+        i = 0
         
-        for line in lines:
-            line = line.strip()
+        while i < len(lines):
+            line = lines[i].strip()
             if not line:
+                i += 1
                 continue
                 
             # Check if line is a markdown header
@@ -343,7 +425,39 @@ class PyMDRenderer:
                     processed_header = self._process_bold_text_in_content(header_text)
                     header_html = f'<h{level}>{processed_header}</h{level}>'
                     self.add_element(f'h{level}', header_text, header_html)
+                    i += 1
                     continue
+            
+            # Check if line is a markdown table
+            if '|' in line and line.count('|') >= 2:
+                table_lines = [line]
+                i += 1
+                
+                # Collect potential table lines
+                while i < len(lines):
+                    next_line = lines[i].strip()
+                    if '|' in next_line and next_line.count('|') >= 2:
+                        table_lines.append(next_line)
+                        i += 1
+                    elif not next_line:
+                        i += 1
+                        continue
+                    else:
+                        break
+                
+                # Process table if we have at least 2 rows (header + separator/data)
+                if len(table_lines) >= 2:
+                    table_html = self._process_markdown_table(table_lines)
+                    if table_html:
+                        self.add_element('table', table_lines, table_html)
+                        continue
+                
+                # If not a valid table, fall back to regular text processing
+                for table_line in table_lines:
+                    processed_text = self._process_bold_text_in_content(table_line)
+                    text_html = f'<p>{processed_text}</p>'
+                    self.add_element('text', table_line, text_html)
+                continue
             
             # Check if line is a list item
             if line.startswith('-') or re.match(r'^\d+\.\s+', line):
@@ -359,12 +473,14 @@ class PyMDRenderer:
                         processed_item = self._process_bold_text_in_content(item_text)
                         ol_html = f'<ol><li>{processed_item}</li></ol>'
                         self.add_element('ol', [item_text], ol_html)
+                i += 1
                 continue
             
             # Regular text - treat as paragraph
             processed_text = self._process_bold_text_in_content(line)
             text_html = f'<p>{processed_text}</p>'
             self.add_element('text', line, text_html)
+            i += 1
 
     def _process_display_comments(self, code: str) -> str:
         """Process // comments in display-only code blocks"""
@@ -723,6 +839,42 @@ class PyMDRenderer:
                         i += 1
                         continue
                 
+                # Check if this is a markdown table
+                elif '|' in markdown_content and markdown_content.count('|') >= 2:
+                    # Collect table lines (prefixed with #)
+                    table_lines = [markdown_content]
+                    original_i = i
+                    i += 1
+                    
+                    while i < len(lines):
+                        current_line = lines[i]
+                        current_stripped = current_line.strip()
+                        
+                        if current_stripped.startswith('#'):
+                            current_content = current_stripped[1:].strip()
+                            if '|' in current_content and current_content.count('|') >= 2:
+                                table_lines.append(current_content)
+                                i += 1
+                            elif not current_content:
+                                # Empty line, skip
+                                i += 1
+                                continue
+                            else:
+                                # Not a table line, stop collecting
+                                break
+                        else:
+                            break
+                    
+                    # Process table if we have valid table data
+                    if len(table_lines) >= 2:
+                        table_html = self._process_markdown_table(table_lines)
+                        if table_html:
+                            self.add_element('table', table_lines, table_html)
+                            continue
+                    
+                    # If not valid table, restore position and continue to next check
+                    i = original_i
+                
                 # Check if this is a list item
                 elif markdown_content.startswith('-') or re.match(r'^\d+\.\s+', markdown_content):
                     if markdown_content.startswith('-'):
@@ -800,6 +952,37 @@ class PyMDRenderer:
                     self.add_element(f'h{level}', header_text, header_html)
                     i += 1
                     continue
+
+            # Handle markdown tables (legacy - without # prefix)
+            if '|' in stripped_line and stripped_line.count('|') >= 2:
+                table_lines = [stripped_line]
+                original_i = i
+                i += 1
+                
+                # Collect potential table lines
+                while i < len(lines):
+                    current_line = lines[i]
+                    current_stripped = current_line.strip()
+                    
+                    if '|' in current_stripped and current_stripped.count('|') >= 2:
+                        table_lines.append(current_stripped)
+                        i += 1
+                    elif not current_stripped:
+                        # Empty line, skip
+                        i += 1
+                        continue
+                    else:
+                        break
+                
+                # Process table if we have valid table data
+                if len(table_lines) >= 2:
+                    table_html = self._process_markdown_table(table_lines)
+                    if table_html:
+                        self.add_element('table', table_lines, table_html)
+                        continue
+                
+                # If not valid table, restore position and continue
+                i = original_i
 
             # Handle unordered lists (legacy - without # prefix)
             if stripped_line.startswith('-') or line.startswith('\t-'):
