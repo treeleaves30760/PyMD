@@ -1,0 +1,16 @@
+# # This is a h1 in markdown
+#
+# This is words in markdown
+#
+# ```
+# This is comment in python
+# The below part will print both in python command and pymd renderer
+print("## This should be rendered as h2")
+
+a = 20
+b = 30
+print(f"The answer is {a+b}")
+# ```
+#
+# - This is a unordered list in markdown  
+# 1. This is a ordered list in markdown

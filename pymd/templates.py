@@ -713,15 +713,25 @@ def get_editor_template(mode, filename, escaped_content, initial_html):
                 defaultToken: 'text-outside',
                 tokenizer: {{
                     root: [
-                        // Code block markers
+                        // Code block markers (regular)
                         [/^```\s*$/, {{ token: 'code-fence', next: '@codeblock' }}],
                         // Display-only code block markers (four backticks)
                         [/^````\s*$/, {{ token: 'display-fence', next: '@displayblock' }}],
+                        // Code block markers prefixed with # (hide the #)
+                        [/^#\s*```\s*$/, {{ token: 'code-fence-markdown', next: '@codeblock' }}],
+                        [/^#\s*````\s*$/, {{ token: 'display-fence-markdown', next: '@displayblock' }}],
                         // Comments outside code blocks  
                         [/\/\/.*$/, 'comment.outside'],
-                        // Headers
+                        // New syntax: # prefixed markdown content (headers) - hide the #
+                        [/^#\s*(#+.*)$/, 'header.markdown'],
+                        // New syntax: # prefixed markdown content (lists) - hide the #
+                        [/^#\s*([-\*\+]\s.*)$/, 'list.markdown'],
+                        [/^#\s*(\d+\.\s.*)$/, 'list.markdown'],
+                        // New syntax: # prefixed markdown content (text) - hide the #
+                        [/^#\s*(.+)$/, 'text.markdown'],
+                        // Legacy: Headers without # prefix
                         [/^#+.*$/, 'header.outside'],
-                        // Lists
+                        // Legacy: Lists without # prefix
                         [/^\s*[-\*\+]\s/, 'list.outside'],
                         [/^\s*\d+\.\s/, 'list.outside'],
                         // Everything else outside code blocks is darker text
@@ -780,7 +790,7 @@ def get_editor_template(mode, filename, escaped_content, initial_html):
                 }}
             }});
             
-            // Define custom theme
+            // Define custom theme with hidden # prefixes
             monaco.editor.defineTheme('pymd-theme', {{
                 base: 'vs',
                 inherit: true,
@@ -790,9 +800,15 @@ def get_editor_template(mode, filename, escaped_content, initial_html):
                     {{ token: 'comment.outside', foreground: '1a1a1a', fontStyle: 'italic' }},
                     {{ token: 'header.outside', foreground: '1a1a1a', fontStyle: 'bold' }},
                     {{ token: 'list.outside', foreground: '1a1a1a' }},
-                    // Code fence styling
+                    // New markdown syntax with # prefix (styled as markdown)
+                    {{ token: 'text.markdown', foreground: '2d3748' }},
+                    {{ token: 'header.markdown', foreground: '2d3748', fontStyle: 'bold' }},
+                    {{ token: 'list.markdown', foreground: '2d3748' }},
+                    // Code fence styling (both regular and # prefixed)
                     {{ token: 'code-fence', foreground: '0066cc', fontStyle: 'bold' }},
                     {{ token: 'display-fence', foreground: '6600cc', fontStyle: 'bold' }},
+                    {{ token: 'code-fence-markdown', foreground: '0066cc', fontStyle: 'bold' }},
+                    {{ token: 'display-fence-markdown', foreground: '6600cc', fontStyle: 'bold' }},
                     // Python syntax highlighting inside code blocks
                     {{ token: 'keyword', foreground: '0000ff', fontStyle: 'bold' }},
                     {{ token: 'predefined', foreground: '795e26' }},
@@ -883,17 +899,120 @@ def get_editor_template(mode, filename, escaped_content, initial_html):
                 setTimeout(updateCodeBlockBackgrounds, 100);
             }});
             
-            editor = monaco.editor.create(document.getElementById('editor'), {{
-                value: {escaped_content},
-                language: 'pymd',
-                theme: 'pymd-theme',
-                automaticLayout: true,
-                wordWrap: 'on',
-                minimap: {{ enabled: false }},
-                fontSize: 14,
-                lineNumbers: 'on',
-                renderWhitespace: 'boundary'
-            }});
+            // Create custom content transformer to hide # prefixes
+            function createDisplayContent(rawContent) {{
+                const lines = rawContent.split('\\n');
+                const displayLines = [];
+                let inCodeBlock = false;
+                
+                for (let i = 0; i < lines.length; i++) {{
+                    const line = lines[i];
+                    
+                    // Check for code block markers
+                    if (line.match(/^#\s*```[`]*\s*$/)) {{
+                        // This is a code block marker, remove the # prefix and toggle code block state
+                        displayLines.push(line.replace(/^#\s*/, ''));
+                        inCodeBlock = !inCodeBlock;
+                    }} else if (inCodeBlock) {{
+                        // Inside code block, keep the line as-is (including Python # comments)
+                        displayLines.push(line);
+                    }} else if (line.match(/^#\s*/)) {{
+                        // Outside code block, this is markdown content, remove the leading # and optional space
+                        displayLines.push(line.replace(/^#\s?/, ''));
+                    }} else {{
+                        // Outside code block, non-# prefixed line (legacy markdown or Python code)
+                        displayLines.push(line);
+                    }}
+                }}
+                
+                return displayLines.join('\\n');
+            }}
+            
+            function createRawContent(displayContent) {{
+                const lines = displayContent.split('\\n');
+                const rawLines = [];
+                let inCodeBlock = false;
+                
+                for (let i = 0; i < lines.length; i++) {{
+                    const line = lines[i];
+                    
+                    // Check for code block markers
+                    if (line.match(/^```[`]*\s*$/)) {{
+                        // This is a code block marker, add # prefix and toggle code block state
+                        rawLines.push('# ' + line);
+                        inCodeBlock = !inCodeBlock;
+                    }} else if (inCodeBlock) {{
+                        // Inside code block, keep the line as-is (including Python # comments)
+                        rawLines.push(line);
+                    }} else if (line.trim() === '') {{
+                        // Empty line outside code block becomes just #
+                        rawLines.push('#');
+                    }} else if (line.match(/^\s*(import|from|def|class|if|for|while|try|except|with|return|print)/) ||
+                               line.match(/^\s*[a-zA-Z_][a-zA-Z0-9_]*\s*=/) ||
+                               line.match(/^\s*[\[\](){{}}"']/)) {{
+                        // This looks like Python code outside code blocks, keep as-is
+                        rawLines.push(line);
+                    }} else {{
+                        // This looks like markdown content (including headers, lists, text), add # prefix
+                        rawLines.push('# ' + line);
+                    }}
+                }}
+                
+                // Join lines back into a string
+                return rawLines.join('\\n');
+            }}
+            
+            // Transform content for display (hide # prefixes)
+            const rawContent = {escaped_content};
+            console.log('Raw content:', rawContent);
+            const displayContent = createDisplayContent(rawContent);
+            console.log('Display content:', displayContent);
+            
+            const editorElement = document.getElementById('editor');
+            console.log('Editor element:', editorElement);
+            
+            try {{
+                editor = monaco.editor.create(editorElement, {{
+                    value: displayContent,
+                    language: 'pymd',
+                    theme: 'pymd-theme',
+                    automaticLayout: true,
+                    wordWrap: 'on',
+                    minimap: {{ enabled: false }},
+                    fontSize: 14,
+                    lineNumbers: 'on',
+                    renderWhitespace: 'boundary'
+                }});
+                console.log('Editor created successfully:', editor);
+            }} catch (error) {{
+                console.error('Error creating Monaco editor:', error);
+                // Fallback: create a simple textarea
+                const fallbackTextarea = document.createElement('textarea');
+                fallbackTextarea.value = displayContent;
+                fallbackTextarea.style.width = '100%';
+                fallbackTextarea.style.height = '100%';
+                fallbackTextarea.style.border = 'none';
+                fallbackTextarea.style.resize = 'none';
+                fallbackTextarea.style.fontFamily = 'monospace';
+                fallbackTextarea.style.fontSize = '14px';
+                editorElement.appendChild(fallbackTextarea);
+                
+                // Create a mock editor object for compatibility
+                editor = {{
+                    getValue: () => fallbackTextarea.value,
+                    setValue: (value) => {{ fallbackTextarea.value = value; }},
+                    onDidChangeModelContent: (callback) => {{
+                        fallbackTextarea.addEventListener('input', callback);
+                    }},
+                    getPosition: () => ({{ lineNumber: 1, column: 1 }}),
+                    onDidChangeCursorPosition: (callback) => {{}}
+                }};
+            }}
+            
+            // Store original content transformation functions
+            editor._createDisplayContent = createDisplayContent;
+            editor._createRawContent = createRawContent;
+            editor._originalContent = rawContent;
             
             // Track changes
             editor.onDidChangeModelContent(function() {{
@@ -1000,11 +1119,15 @@ def get_editor_template(mode, filename, escaped_content, initial_html):
             overlay.style.display = 'flex';
             isRendering = true;
             updateStatusText('Saving & Rendering...');
-            const content = editor.getValue();
+            
+            // Convert display content back to raw content with # prefixes
+            const displayContent = editor.getValue();
+            const rawContent = editor._createRawContent(displayContent);
+            
             fetch('/api/write', {{
                 method: 'POST',
                 headers: {{ 'Content-Type': 'application/json' }},
-                body: JSON.stringify({{ content }})
+                body: JSON.stringify({{ content: rawContent }})
             }})
             .then(res => res.json())
             .then(data => {{
@@ -1033,7 +1156,9 @@ def get_editor_template(mode, filename, escaped_content, initial_html):
         function saveFile() {{
             if (!editor) return;
             
-            const content = editor.getValue();
+            // Convert display content back to raw content with # prefixes
+            const displayContent = editor.getValue();
+            const content = editor._createRawContent(displayContent);
             const saveBtn = document.getElementById('saveBtn');
             
             let filename = null;
@@ -1095,7 +1220,9 @@ def get_editor_template(mode, filename, escaped_content, initial_html):
         function exportHtml() {{
             if (!editor) return;
             
-            const content = editor.getValue();
+            // Convert display content back to raw content with # prefixes
+            const displayContent = editor.getValue();
+            const content = editor._createRawContent(displayContent);
             const exportBtn = document.getElementById('exportHtmlBtn');
             
             exportBtn.disabled = true;
@@ -1149,7 +1276,9 @@ def get_editor_template(mode, filename, escaped_content, initial_html):
         function exportMarkdown() {{
             if (!editor) return;
             
-            const content = editor.getValue();
+            // Convert display content back to raw content with # prefixes
+            const displayContent = editor.getValue();
+            const content = editor._createRawContent(displayContent);
             const exportBtn = document.getElementById('exportMdBtn');
             
             exportBtn.disabled = true;
@@ -1244,7 +1373,9 @@ def get_editor_template(mode, filename, escaped_content, initial_html):
         function updatePreview() {{
             if (!editor) return;
             
-            const content = editor.getValue();
+            // Convert display content back to raw content with # prefixes
+            const displayContent = editor.getValue();
+            const content = editor._createRawContent(displayContent);
             const overlay = document.getElementById('previewLoading');
             overlay.style.display = 'flex';
             updateStatusText('Rendering...');

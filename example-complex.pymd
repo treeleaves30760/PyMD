@@ -1,16 +1,16 @@
-# Complex Code Example PyExecMD
-
-## Import the Module
-
-```
+# # Complex Code Example PyMD
+#
+# ## Import the Module
+#
+# ```
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
-pymd.text('Finish the import')
-```
-
-## Basic Setting
-
-```
+print('### Finish the import')
+# ```
+#
+# ## Basic Setting
+#
+# ```
 # Load the specific Gemma model
 model_name = "google/gemma-3-1b-it"
 
@@ -40,17 +40,17 @@ model = AutoModelForCausalLM.from_pretrained(
 # Manually move to device to avoid MPS issues
 model = model.to(device)
 
-pymd.text(f'Model loaded successfully on {device} with dtype {dtype}')
-```
-
-## Start generating
-
-```
+print(f'### Model loaded successfully on {device} with dtype {dtype}')
+# ```
+#
+# ## Start generating
+#
+# ```
 try:
     # Ask about TCP/IP
     prompt = "Explain TCP/IP in simple terms. What is it and how does it work?"
     
-    pymd.text(f"Generating response for: {prompt[:50]}...")
+    print(f"Generating response for: {prompt[:50]}...")
     
     # Tokenize and move to correct device
     inputs = tokenizer(prompt, return_tensors="pt").to(device)
@@ -86,11 +86,11 @@ except RuntimeError as e:
         print("CPU fallback generation completed!")
     else:
         raise e
-```
-
-## Output the response
-
-```
+# ```
+#
+# ## Output the response
+#
+# ```
 # Display the response
 response = tokenizer.decode(outputs[0], skip_special_tokens=True)
 
@@ -100,11 +100,19 @@ if response.startswith(prompt):
 else:
     clean_response = response.strip()
 
-pymd.text("**Gemma-3 Response about TCP/IP:**")
-pymd.text("=" * 50)
-pymd.text(clean_response)
-pymd.text("=" * 50)
-pymd.text("✅ Generation completed successfully!")
-```
-
-## This is a LLM text generation example with PyExecMD
+print("### Gemma-3 Response about TCP/IP:")
+print("=" * 50)
+print(clean_response)
+print("=" * 50)
+print("✅ **Generation completed successfully!**")
+# ```
+#
+# ## This is a LLM text generation example with PyMD
+#
+# This example demonstrates:
+# - **Complex model loading and device management**
+# - **Error handling with fallback strategies**  
+# - **AI text generation integration**
+# - **Markdown output formatting from code execution**
+# 
+# The file can be run directly as Python: `python example-complex.pymd`

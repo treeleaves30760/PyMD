@@ -319,6 +319,52 @@ class PyMDRenderer:
         """Process **bold** syntax in content text"""
         # Replace **text** with <strong>text</strong>
         return re.sub(r'\*\*(.*?)\*\*', r'<strong>\1</strong>', text)
+    
+    def _process_print_output_as_markdown(self, output: str):
+        """Process print output lines as markdown content"""
+        lines = output.split('\n')
+        
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+                
+            # Check if line is a markdown header
+            if line.startswith('#'):
+                level = 0
+                for char in line:
+                    if char == '#':
+                        level += 1
+                    else:
+                        break
+                
+                if level > 0 and level <= 6 and line[level:].strip():
+                    header_text = line[level:].strip()
+                    processed_header = self._process_bold_text_in_content(header_text)
+                    header_html = f'<h{level}>{processed_header}</h{level}>'
+                    self.add_element(f'h{level}', header_text, header_html)
+                    continue
+            
+            # Check if line is a list item
+            if line.startswith('-') or re.match(r'^\d+\.\s+', line):
+                if line.startswith('-'):
+                    item_text = line[1:].strip()
+                    processed_item = self._process_bold_text_in_content(item_text)
+                    ul_html = f'<ul><li>{processed_item}</li></ul>'
+                    self.add_element('ul', [item_text], ul_html)
+                else:
+                    match = re.match(r'^\d+\.\s+(.*)$', line)
+                    if match:
+                        item_text = match.group(1).strip()
+                        processed_item = self._process_bold_text_in_content(item_text)
+                        ol_html = f'<ol><li>{processed_item}</li></ol>'
+                        self.add_element('ol', [item_text], ol_html)
+                continue
+            
+            # Regular text - treat as paragraph
+            processed_text = self._process_bold_text_in_content(line)
+            text_html = f'<p>{processed_text}</p>'
+            self.add_element('text', line, text_html)
 
     def _process_display_comments(self, code: str) -> str:
         """Process // comments in display-only code blocks"""
@@ -446,7 +492,7 @@ class PyMDRenderer:
         return code_blocks
 
     def parse_and_render(self, pymd_content: str) -> str:
-        """Parse PyMD content with ``` blocks for code and Markdown syntax for content"""
+        """Parse PyMD content with ``` blocks for code and # prefixed markdown content"""
         # Check if content has changed significantly
         content_hash = self._get_content_hash(pymd_content)
         
@@ -477,7 +523,7 @@ class PyMDRenderer:
                 i += 1
                 continue
 
-            # Handle code blocks with ```
+            # Handle code blocks with ``` (only non-prefixed)
             if stripped_line == '```':
                 i += 1  # Skip the opening ```
                 code_lines = []
@@ -485,10 +531,15 @@ class PyMDRenderer:
                 # Collect all lines until closing ```
                 while i < len(lines):
                     current_line = lines[i]
-                    if current_line.strip() == '```':
+                    current_stripped = current_line.strip()
+                    
+                    # Check for closing ``` (only non-prefixed)
+                    if current_stripped == '```':
                         # Found closing ```, stop collecting
                         i += 1  # Skip the closing ```
                         break
+                    
+                    # Code inside ``` blocks should be used as-is
                     code_lines.append(current_line)
                     i += 1
 
@@ -503,9 +554,8 @@ class PyMDRenderer:
                         result = self.execute_code(code_block, cache_key)
                         if result['success']:
                             if result['output'].strip():
-                                output_html = f'<pre class="code-output">{result["output"].strip()}</pre>'
-                                self.add_element(
-                                    'code_output', result['output'], output_html)
+                                # Process print output as markdown
+                                self._process_print_output_as_markdown(result['output'].strip())
                         else:
                             # Display execution error
                             error_html = f'<pre class="error">Code execution error: {result["error"]}</pre>'
@@ -518,7 +568,7 @@ class PyMDRenderer:
                         code_block_index += 1
                 continue
 
-            # Handle display-only code blocks with ````
+            # Handle display-only code blocks with ```` (only non-prefixed)
             if stripped_line == '````':
                 i += 1  # Skip the opening ````
                 code_lines = []
@@ -526,10 +576,15 @@ class PyMDRenderer:
                 # Collect all lines until closing ````
                 while i < len(lines):
                     current_line = lines[i]
-                    if current_line.strip() == '````':
+                    current_stripped = current_line.strip()
+                    
+                    # Check for closing ```` (only non-prefixed)
+                    if current_stripped == '````':
                         # Found closing ````, stop collecting
                         i += 1  # Skip the closing ````
                         break
+                    
+                    # Code inside ```` blocks should be used as-is
                     code_lines.append(current_line)
                     i += 1
 
@@ -553,13 +608,183 @@ class PyMDRenderer:
                     code_block_index += 1
                 continue
 
-            # Skip // comments
+            # Skip // comments (but not markdown lines)
             if stripped_line.startswith('//'):
                 i += 1
                 continue
 
-            # Handle headers (#, ##, ###, etc.)
+            # Handle markdown content prefixed with # (Python comments)
+            # Check if line starts with # followed by space or more # (markdown content)
             if stripped_line.startswith('#'):
+                # Extract the markdown content (remove leading #)
+                markdown_content = stripped_line[1:].strip()
+                
+                # Check if this is a code block marker inside markdown
+                if markdown_content == '```':
+                    # Start of code block within markdown
+                    i += 1  # Skip the # ``` line
+                    code_lines = []
+                    
+                    # Collect code until # ``` closing marker
+                    while i < len(lines):
+                        current_line = lines[i]
+                        current_stripped = current_line.strip()
+                        
+                        # Check for closing # ``` 
+                        if current_stripped.startswith('#') and current_stripped[1:].strip() == '```':
+                            # Found closing # ```, stop collecting
+                            i += 1  # Skip the closing # ```
+                            break
+                        
+                        # Regular code line (not prefixed with #)
+                        code_lines.append(current_line)
+                        i += 1
+                    
+                    # Execute the collected code block
+                    if code_lines:
+                        code_block = '\n'.join(code_lines)
+                        try:
+                            # Create cache key for this specific code block
+                            variables_snapshot = self._get_variable_snapshot()
+                            cache_key = f"exec_{code_block_index}_{self._get_code_hash(code_block, variables_snapshot)}"
+                            
+                            result = self.execute_code(code_block, cache_key)
+                            if result['success']:
+                                if result['output'].strip():
+                                    # Process print output as markdown
+                                    self._process_print_output_as_markdown(result['output'].strip())
+                            else:
+                                # Display execution error
+                                error_html = f'<pre class="error">Code execution error: {result["error"]}</pre>'
+                                self.add_element('error', result['error'], error_html)
+                            
+                            code_block_index += 1
+                        except Exception as e:
+                            error_html = f'<pre class="error">Code execution error: {str(e)}</pre>'
+                            self.add_element('error', str(e), error_html)
+                            code_block_index += 1
+                    continue
+                
+                # Check if this is a display-only code block marker
+                elif markdown_content == '````':
+                    # Start of display-only code block within markdown
+                    i += 1  # Skip the # ```` line
+                    code_lines = []
+                    
+                    # Collect code until # ```` closing marker
+                    while i < len(lines):
+                        current_line = lines[i]
+                        current_stripped = current_line.strip()
+                        
+                        # Check for closing # ````
+                        if current_stripped.startswith('#') and current_stripped[1:].strip() == '````':
+                            # Found closing # ````, stop collecting
+                            i += 1  # Skip the closing # ````
+                            break
+                        
+                        # Regular code line (preserve # prefixes for display)
+                        code_lines.append(current_line)
+                        i += 1
+                    
+                    # Display the code block without execution
+                    if code_lines:
+                        code_block = '\n'.join(code_lines)
+                        cache_key = f"display_{code_block_index}_{hashlib.md5(code_block.encode()).hexdigest()}"
+                        
+                        # Check if we have cached HTML for this display block
+                        if cache_key in self.code_cache:
+                            cached_html = self.code_cache[cache_key]['html']
+                            self.add_element('display_code', code_block, cached_html)
+                        else:
+                            # Process // comments in display blocks
+                            processed_code = self._process_display_comments(code_block)
+                            display_html = f'<pre class="display-code">{processed_code}</pre>'
+                            self.add_element('display_code', code_block, display_html)
+                            # Cache the display HTML
+                            self.code_cache[cache_key] = {'html': display_html}
+                        
+                        code_block_index += 1
+                    continue
+                
+                # Determine if this is a header by counting # characters
+                elif markdown_content.startswith('#'):
+                    # This is a header (##, ###, etc.)
+                    level = 1  # Start with level 1 for the first #
+                    header_content = markdown_content[1:]  # Remove the first #
+                    while header_content.startswith('#'):
+                        level += 1
+                        header_content = header_content[1:]
+                    
+                    if level <= 6 and header_content.strip():
+                        header_text = header_content.strip()
+                        processed_header = self._process_bold_text_in_content(header_text)
+                        header_html = f'<h{level}>{processed_header}</h{level}>'
+                        self.add_element(f'h{level}', header_text, header_html)
+                        i += 1
+                        continue
+                
+                # Check if this is a list item
+                elif markdown_content.startswith('-') or re.match(r'^\d+\.\s+', markdown_content):
+                    if markdown_content.startswith('-'):
+                        # Handle unordered lists
+                        list_items = []
+                        while i < len(lines):
+                            current_line = lines[i]
+                            current_stripped = current_line.strip()
+                            
+                            if current_stripped.startswith('#'):
+                                current_content = current_stripped[1:].strip()
+                                if current_content.startswith('-'):
+                                    item_text = current_content[1:].strip()
+                                    list_items.append(item_text)
+                                    i += 1
+                                else:
+                                    break
+                            else:
+                                break
+                        
+                        if list_items:
+                            processed_items = [self._process_bold_text_in_content(item) for item in list_items]
+                            ul_html = '<ul>' + ''.join(f'<li>{item}</li>' for item in processed_items) + '</ul>'
+                            self.add_element('ul', list_items, ul_html)
+                        continue
+                    
+                    else:
+                        # Handle ordered lists
+                        list_items = []
+                        while i < len(lines):
+                            current_line = lines[i]
+                            current_stripped = current_line.strip()
+                            
+                            if current_stripped.startswith('#'):
+                                current_content = current_stripped[1:].strip()
+                                match = re.match(r'^\d+\.\s+(.*)$', current_content)
+                                if match:
+                                    item_text = match.group(1).strip()
+                                    list_items.append(item_text)
+                                    i += 1
+                                else:
+                                    break
+                            else:
+                                break
+                        
+                        if list_items:
+                            processed_items = [self._process_bold_text_in_content(item) for item in list_items]
+                            ol_html = '<ol>' + ''.join(f'<li>{item}</li>' for item in processed_items) + '</ol>'
+                            self.add_element('ol', list_items, ol_html)
+                        continue
+                
+                # Handle regular markdown text (prefixed with #)
+                if markdown_content:
+                    processed_text = self._process_bold_text_in_content(markdown_content)
+                    text_html = f'<p>{processed_text}</p>'
+                    self.add_element('text', markdown_content, text_html)
+                i += 1
+                continue
+
+            # Handle legacy markdown syntax (headers, lists, text without # prefix)
+            # This maintains backward compatibility
+            if stripped_line.startswith('##'):  # Headers without # prefix (legacy)
                 level = 0
                 for char in stripped_line:
                     if char == '#':
@@ -576,7 +801,7 @@ class PyMDRenderer:
                     i += 1
                     continue
 
-            # Handle unordered lists (- or tab-)
+            # Handle unordered lists (legacy - without # prefix)
             if stripped_line.startswith('-') or line.startswith('\t-'):
                 list_items = []
                 while i < len(lines):
@@ -603,7 +828,7 @@ class PyMDRenderer:
                     self.add_element('ul', list_items, ul_html)
                 continue
 
-            # Handle ordered lists (1., 2., 3., etc.)
+            # Handle ordered lists (legacy - without # prefix)
             if re.match(r'^\d+\.\s+', stripped_line):
                 list_items = []
                 while i < len(lines):
@@ -627,10 +852,11 @@ class PyMDRenderer:
                     self.add_element('ol', list_items, ol_html)
                 continue
 
-            # Handle plain text (everything else outside code blocks)
-            processed_text = self._process_bold_text_in_content(stripped_line)
-            text_html = f'<p>{processed_text}</p>'
-            self.add_element('text', stripped_line, text_html)
+            # Handle plain text (legacy - without # prefix)
+            if stripped_line and not stripped_line.startswith('#'):
+                processed_text = self._process_bold_text_in_content(stripped_line)
+                text_html = f'<p>{processed_text}</p>'
+                self.add_element('text', stripped_line, text_html)
             i += 1
 
         return self.generate_html()
@@ -914,26 +1140,35 @@ class PyMDRenderer:
                 i += 1
                 continue
 
-            # Handle headers (#, ##, ###, etc.)
+            # Handle markdown content prefixed with # (remove the # prefix)
             if stripped_line.startswith('#'):
+                markdown_content = stripped_line[1:].strip()
+                if markdown_content:  # Only add non-empty content
+                    markdown_lines.append(markdown_content)
+                i += 1
+                continue
+
+            # Handle legacy content (without # prefix) for backward compatibility
+            if stripped_line.startswith('##'):  # Legacy headers
                 markdown_lines.append(stripped_line)
                 i += 1
                 continue
 
-            # Handle unordered lists (- or tab-)
+            # Handle legacy unordered lists (- or tab-)
             if stripped_line.startswith('-') or line.startswith('\t-'):
                 markdown_lines.append(stripped_line)
                 i += 1
                 continue
 
-            # Handle ordered lists (1., 2., 3., etc.)
+            # Handle legacy ordered lists (1., 2., 3., etc.)
             if re.match(r'^\d+\.\s+', stripped_line):
                 markdown_lines.append(stripped_line)
                 i += 1
                 continue
 
-            # Handle plain text (everything else)
-            markdown_lines.append(stripped_line)
+            # Handle legacy plain text (everything else without # prefix)
+            if stripped_line and not stripped_line.startswith('#'):
+                markdown_lines.append(stripped_line)
             i += 1
 
         return '\n'.join(markdown_lines)

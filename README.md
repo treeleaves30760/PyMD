@@ -1,23 +1,26 @@
 # PyMD: Python-Powered Markdown
 
-PyMD is a revolutionary markup language that combines familiar markdown syntax with the full power of Python execution. Write beautiful documents using standard markdown headers, lists, and text, while executing Python code in clearly separated code blocks!
+PyMD is a revolutionary markup language that creates **executable Python files** that also render beautifully as markdown documents. All markdown content is prefixed with `#` (making it Python comments), while code blocks contain regular executable Python code that prints markdown during rendering.
 
 ## ✨ Features
 
-- **📝 Markdown Syntax**: Use familiar markdown headers (#), lists (-), and plain text
-- **🐍 Dual Code Block Types**: 
-  - **``` (3 backticks)**: Execute Python code and show output
+- **🐍 Executable Python Files**: Files can be run directly with `python filename.pymd`
+- **📝 Commented Markdown**: All markdown content is prefixed with `#` (Python comments)
+- **🖨️ Print-to-Markdown**: Python `print()` statements output markdown content during rendering
+- **🎨 Dual Code Block Types**: 
+  - **``` (3 backticks)**: Execute Python code and process print output as markdown
   - **```` (4 backticks)**: Display code with syntax highlighting only
 - **🔗 Variable Persistence**: Variables persist across code blocks in the same document
 - **🔴 Live Preview**: Real-time rendering with auto-refresh as you edit
 - **📊 Rich Visualizations**: Built-in support for matplotlib, pandas, and other data science libraries
 - **🧮 Dynamic Content**: Execute Python code and display results inline
 - **📱 Beautiful Output**: Clean, responsive HTML with modern styling
-- **⚡ Fast Rendering**: Efficient parsing and rendering engine
+- **⚡ Fast Rendering**: Efficient parsing and rendering engine with caching
 - **🔄 Auto-Refresh**: Changes reflect immediately in the live preview
 - **💬 Smart Comments**: Display blocks use `//` for cleaner code presentation
 - **📄 Export Options**: Export to HTML or standard Markdown formats
 - **🖱️ One-Click Export**: Export buttons in the web editor interface
+- **↔️ Backward Compatible**: Supports both executable and legacy syntax
 
 ## 🚀 Quick Start
 
@@ -74,7 +77,7 @@ python -m pymd.cli serve --file my_document.pymd --port 8080
 # Render to HTML
 python -m pymd.cli render my_document.pymd -o output.html
 
-# Render to Markdown (NEW!)
+# Render to Markdown
 python -m pymd.cli render my_document.pymd -f markdown -o output.md
 ```
 
@@ -102,7 +105,7 @@ python -m pymd.cli render my_document.pymd -f markdown -o output.md
    # Render to HTML
    pyexecmd render my_document.pymd -o output.html
    
-   # Render to Markdown (NEW!)
+   # Render to Markdown
    pyexecmd render my_document.pymd -f markdown -o output.md
    ```
 
@@ -118,202 +121,278 @@ The web editor (available at `/editor`) includes:
 
 ## 📝 PyMD Syntax
 
-PyMD combines familiar markdown syntax with Python code execution:
+PyMD files are **executable Python scripts** where:
+- **Markdown content** is prefixed with `#` (Python comments)
+- **Code blocks** contain regular Python code that prints markdown
+- **Print output** becomes rendered markdown content during PyMD rendering
+- **Files run as Python** and render as beautiful documents
 
-### Markdown Content (Outside Code Blocks)
+### Basic Structure
+
+```python
+# # This is a markdown header
+# 
+# This is regular markdown text with **bold** formatting.
+#
+# - This is a list item
+# - Another list item
+#
+# ```
+# This is a comment in the code block
+print("## This becomes a rendered H2 header")
+print("Regular text from Python print statement")
+print("- **Dynamic list item** with variables")
+# ```
+#
+# More markdown content here...
+```
+
+### 📝 Markdown Content (Prefixed with `#`)
+
+All markdown content is prefixed with `#` making it Python comments:
 
 **Headers:**
 
-```markdown
-# Main Title
-## Section Title
-### Subsection Title
+```python
+# # Main Title
+# ## Section Title  
+# ### Subsection Title
 ```
 
 **Lists:**
 
-```markdown
-- Unordered list item
-- Another unordered item
-
-1. Ordered list item
-2. Another ordered item
+```python
+# - Unordered list item
+# - Another unordered item
+#
+# 1. Ordered list item
+# 2. Another ordered item
 ```
 
 **Plain Text:**
 
-```markdown
-This is a paragraph of regular text.
-You can write multiple paragraphs easily.
+```python
+# This is a paragraph of regular text.
+# You can write multiple paragraphs easily.
 ```
 
 **Comments:**
 
-```markdown
-// This is a comment and will be ignored
+```python
+# // This is a comment and will be ignored during rendering
 ```
 
-### Python Code Blocks
+### 🐍 Code Blocks (Executable Python)
 
-**Simple Code Execution:**
+Code blocks markers are prefixed with `#`, but the code inside is regular Python:
 
-````markdown
-```
+**Executable Code Block:**
+
+```python
+# ```
+# This is a comment inside the code block
 x = 42
 y = "Hello, PyMD!"
-print(f"{y} The answer is {x}")
+print(f"## {y} The answer is {x}")  # This becomes an H2 header
+print(f"The calculation result: **{x * 2}**")  # Bold text
+# ```
 ```
-````
 
-**Data Analysis:**
+**Display-Only Code Block:**
 
-````markdown
+```python
+# ````
+# def example_function():
+#     // This code is displayed but not executed
+#     return "example"
+# ````
 ```
+
+### 📊 Complete Example
+
+**Data Analysis with Print-to-Markdown:**
+
+```python
+# # Data Analysis Report
+#
+# Let's analyze some sample data:
+#
+# ```
 import pandas as pd
 import numpy as np
 
 # Create sample data
-
+np.random.seed(42)
 data = pd.DataFrame({
     'Name': ['Alice', 'Bob', 'Charlie'],
-    'Score': [95, 87, 92]
+    'Score': [95, 87, 92],
+    'Department': ['Engineering', 'Sales', 'Marketing']
 })
 
-print("Sample Data:")
-pymd.table(data)
+print("## Sample Employee Data")
+print(f"**Total employees:** {len(data)}")
+print(f"**Average score:** {data['Score'].mean():.1f}")
+print()
+print("### Individual Scores:")
+for _, row in data.iterrows():
+    print(f"- **{row['Name']}** ({row['Department']}): {row['Score']}")
+# ```
+#
+# ## Analysis Results
+#
+# The data shows interesting patterns in employee performance.
 ```
-````
 
-**Visualizations:**
+### 💬 Interactive Input with Mock Values
 
-````markdown
-```
-import matplotlib.pyplot as plt
-
-x = np.linspace(0, 10, 100)
-y = np.sin(x)
-
-plt.figure(figsize=(8, 5))
-plt.plot(x, y, 'b-', linewidth=2)
-plt.title("Sine Wave Visualization")
-plt.grid(True)
-
-pymd.image(plt.gcf(), "Beautiful sine wave")
-```
-````
-
-**Interactive Input with Mock Values:**
-
-````markdown
-```
+```python
+# ## User Profile Generator
+#
+# ```
 # Get user input (with mock values for non-interactive execution)
 name = input("Enter your name: ") # input: Alice
 age = input("Enter your age: ") # input: 25
 
-# Use the input values
-pymd.h2(f"Welcome, {name}!")
-pymd.text(f"You are {age} years old.")
+print(f"### Welcome, {name}!")
+print(f"**Age:** {age} years old")
+print(f"**Birth year:** {2025 - int(age)}")
 
 # Input without mock value defaults to empty string
 optional_input = input("Optional comment: ")
 if optional_input:
-    print(f"Comment: {optional_input}")
+    print(f"**Comment:** {optional_input}")
 else:
-    print("No comment provided")
+    print("*No comment provided*")
+# ```
 ```
-````
 
-**Code Display (Method 1 - Using pymd.code()):**
+### 🎨 Display-Only Code Blocks
 
-````markdown
-```
-sample_code = '''
+Use four backticks for code that displays but doesn't execute:
+
+```python
+# ## Algorithm Reference
+#
+# Here's the algorithm we'll implement:
+#
+# ````
+# def factorial(n):
+#     // Base case
+#     if n <= 1:
+#         return 1
+#     // Recursive case  
+#     return n * factorial(n-1)
+# 
+# // Example usage (this won't execute)
+# result = factorial(5)
+# ````
+#
+# Now let's implement it:
+#
+# ```
 def factorial(n):
     if n <= 1:
         return 1
     return n * factorial(n-1)
-'''
 
-pymd.code(sample_code, "python")
-print(f"Factorial of 5 is: {factorial(5)}")
-```
-````
-
-**Code Display (Method 2 - Using four backticks):**
-
-`````markdown
-````
-def factorial(n):
-    // Base case
-    if n <= 1:
-        return 1
-    // Recursive case
-    return n * factorial(n-1)
-
-// Example usage (not executed)
 result = factorial(5)
-````
-`````
-
-### Key Features
-
-- **Variable Persistence**: Variables defined in one code block are available in subsequent blocks
-- **Mixed Content**: Alternate between markdown content and Python code seamlessly  
-- **Two Code Block Types**: 
-  - **Three backticks (```)**: Execute Python code and show output
-  - **Four backticks (````)**: Display code with syntax highlighting (no execution)
-- **Interactive Input Support**: Use `input()` with mock values for non-interactive execution
-- **Clean Separation**: Clear visual distinction between documentation and executable code
-- **Rich Output**: Code execution results are displayed with beautiful formatting
-- **Smart Comment Styling**: Display blocks use `//` comments for cleaner presentation
-
-### Input Mock System
-
-PyMD supports interactive input through a mock system that allows documents to be rendered without user interaction:
-
-- **With Mock Value**: `input("Prompt: ") # input: mock_value` - Returns "mock_value"
-- **Without Mock Value**: `input("Prompt: ")` - Returns empty string ("")
-- **Multiple Inputs**: Each `input()` call uses mock values in sequence
-- **Silent Execution**: Mock inputs don't produce console output, only the actual code results are shown
-
-## 📁 Project Structure
-
-```file
-PyMD/
-├── pymd/                   # Main package directory
-│   ├── __init__.py        # Package initialization
-│   ├── cli.py             # Command-line interface
-│   ├── renderer.py        # Core rendering engine
-│   └── server.py          # Live preview server
-├── example.pymd           # Example PyMD document
-├── pyproject.toml         # Package configuration
-├── MANIFEST.in            # Additional files to include
-├── LICENSE                # MIT License
-├── requirements.txt       # Python dependencies
-└── README.md              # This file
+print(f"## Factorial Results")
+print(f"Factorial of 5 is: **{result}**")
+# ```
 ```
 
-## 🛠️ API Reference
+### 🔑 Key Concepts
 
-### Markdown Syntax (Outside Code Blocks)
+- **🐍 Executable Python**: Files run directly with `python filename.pymd`
+- **📝 Commented Markdown**: All markdown content prefixed with `#` (Python comments)
+- **🖨️ Print-to-Markdown**: Use `print()` to output markdown that gets rendered
+- **🔗 Variable Persistence**: Variables persist across all code in the file
+- **📦 Two Code Block Types**: 
+  - **``` (3 backticks)**: Execute Python and process print output as markdown
+  - **```` (4 backticks)**: Display code with syntax highlighting (no execution)
+- **💬 Interactive Input**: Use `input()` with mock values for non-interactive execution
+- **🎨 Clean Rendering**: `#` prefixes hidden during HTML/Markdown export
+- **📊 Rich Output**: Print statements can output headers, lists, tables, even HTML
+- **💡 Smart Comments**: Use `//` in display blocks for cleaner presentation
+- **↔️ Dual Purpose**: Same file serves as Python script AND beautiful document
 
-- `# Header` - Create level 1 heading
-- `## Header` - Create level 2 heading  
-- `### Header` - Create level 3 heading
-- `- Item` - Unordered list item
-- `1. Item` - Ordered list item
-- `Plain text` - Regular paragraph text
-- `// Comment` - Comments (ignored during rendering)
+## 🛠️ Syntax Reference
 
-### PyMD Functions (Inside Code Blocks)
+### 📝 Markdown Content (All prefixed with `#`)
 
-- `pymd.h1(text)` - Create level 1 heading programmatically
-- `pymd.h2(text)` - Create level 2 heading programmatically
-- `pymd.h3(text)` - Create level 3 heading programmatically
-- `pymd.text(content)` - Create paragraph text programmatically
-- `pymd.code(content, language)` - Display code block with syntax highlighting
-- `pymd.image(plot_obj, caption)` - Render matplotlib plots
-- `pymd.table(data)` - Render pandas DataFrames or tables
+**Headers:**
+```python
+# # Level 1 Header
+# ## Level 2 Header  
+# ### Level 3 Header
+```
+
+**Lists:**
+```python
+# - Unordered list item
+# - Another item
+# 
+# 1. Ordered list item
+# 2. Another ordered item
+```
+
+**Text and Formatting:**
+```python
+# Regular paragraph text.
+# 
+# Text with **bold** and *italic* formatting.
+# 
+# // This is a comment (ignored during rendering)
+```
+
+### 🐍 Code Blocks (Regular Python)
+
+**Executable Code Block:**
+```python
+# ```
+# Comments inside code blocks (optional)
+variable = "Hello World"
+print(f"## {variable}")  # Becomes H2 header in output
+print(f"Current value: **{variable}**")  # Bold text in output
+print("- First result")   # List item in output
+print("- Second result")  # Another list item
+# ```
+```
+
+**Display-Only Code Block:**
+```python
+# ````
+# def example_function():
+#     // This is displayed but not executed
+#     // Use // for comments in display blocks
+#     return "example"
+# ````
+```
+
+### 🖨️ Print-to-Markdown
+
+Use `print()` statements to output markdown content:
+
+```python
+# ```
+data = [1, 2, 3, 4, 5]
+print("## Analysis Results")  # H2 header
+print(f"**Count:** {len(data)}")  # Bold text
+print(f"**Sum:** {sum(data)}")    # Bold text
+print("### Detailed Breakdown:")   # H3 header
+for i, value in enumerate(data, 1):
+    print(f"{i}. Item value: **{value}**")  # Ordered list
+# ```
+```
+
+### 💡 Best Practices
+
+- **File Structure**: Start with `# # Title` as the main header
+- **Code Comments**: Use `# Comments` inside code blocks for Python comments
+- **Markdown Output**: Use `print()` to generate headers, lists, and formatted text
+- **Display Code**: Use `# ````...# ``````` for code examples that shouldn't execute
+- **Variables**: Define variables in code blocks and reference them in print statements
+- **Clean Syntax**: Keep markdown content in `#` prefixed sections, code in blocks
 
 ### CLI Commands
 
@@ -327,7 +406,7 @@ pyexecmd serve [--file FILE] [--port PORT] [--host HOST] [--debug] [--mode {edit
 # Render PyExecMD to HTML (default)
 pyexecmd render <input> [-o OUTPUT] [-f html]
 
-# Render PyExecMD to Markdown (NEW!)
+# Render PyExecMD to Markdown
 pyexecmd render <input> [-o OUTPUT] -f markdown
 
 # Render options
@@ -355,46 +434,114 @@ pyexecmd serve --file tutorial.pymd --port 8080
 pyexecmd render tutorial.pymd -f markdown -o tutorial.md
 ```
 
-## 🎯 Use Cases
-
-- **📊 Data Science Reports**: Combine analysis, visualizations, and explanations
-- **📚 Interactive Documentation**: Living documents that update with code changes
-- **🎓 Educational Materials**: Tutorials with executable examples
-- **📈 Dashboard Reports**: Dynamic reports with real-time data
-- **🔬 Research Papers**: Academic papers with reproducible results
-
 ## 🌟 Examples
 
-Check out `example.pymd` for a comprehensive demonstration of PyMD features, including:
+### Simple Example (`example-simple.pymd`)
 
-- Markdown-style headers, lists, and text
-- Python code execution with output
-- Beautiful data visualizations with matplotlib
-- Dynamic calculations and variable persistence
-- Interactive tables with pandas
-- Mixed content workflow
-- Real-time preview updates
-- Export functionality (HTML and Markdown)
+```python
+# # Simple PyMD Example
+#
+# This demonstrates basic syntax:
+#
+# ```
+# This is a comment in Python
+print("## Hello from PyMD!")
+a = 20
+b = 30
+print(f"The answer is: **{a + b}**")
+# ```
+#
+# - This is a markdown list item
+# 1. This is an ordered list item
+```
 
-### Export Examples
+**Usage:**
+- **Run as Python**: `python example-simple.pymd`
+- **Render to HTML**: `python -m pymd.cli render example-simple.pymd -o output.html`
 
-**Export to HTML for presentations and sharing:**
+### Comprehensive Example (`example.pymd`)
+
+Check out `example.pymd` for a full demonstration including:
+
+- **Executable Python file** with `#` prefixed markdown content
+- **Data analysis** with pandas and numpy
+- **Print-to-markdown** for dynamic content generation
+- **Variable persistence** across code blocks
+- **Interactive input** with mock values
+- **Mixed workflow** of documentation and executable code
+- **Export functionality** (HTML and Markdown)
+
+### Complex Example (`example-complex.pymd`)
+
+Advanced features including:
+- **Machine learning model loading**
+- **Error handling and device management**
+- **AI text generation integration**
+- **Complex data processing workflows**
+
+### 🚀 Quick Example Usage
+
+**1. Run as executable Python:**
+```bash
+python example.pymd
+```
+
+**2. Render as beautiful HTML:**
 ```bash
 python -m pymd.cli render example.pymd -o presentation.html
 ```
 
-**Export to Markdown for documentation and version control:**
+**3. Export to standard Markdown:**
 ```bash
 python -m pymd.cli render example.pymd -f markdown -o documentation.md
 ```
 
-**Web Editor Export:**
-1. Open `http://localhost:8080/editor` in your browser
-2. Edit your PyMD content
-3. Click **📄 Export HTML** for a complete HTML file
-4. Click **📝 Export MD** for a clean Markdown file
+**4. Live editor with preview:**
+```bash
+python -m pymd.cli serve --file example.pymd --port 8080
+# Open http://localhost:8080/editor in your browser
+```
 
-The exported Markdown maintains the structure while converting PyMD-specific syntax to standard Markdown format, making it compatible with GitHub, GitLab, and other Markdown renderers.
+**How Export Works:**
+- **HTML Export**: Full rendering with executed code output and styled markdown
+- **Markdown Export**: Removes `#` prefixes and converts to standard markdown
+- **Source Files**: Remain executable Python scripts with commented markdown
+- **Compatibility**: Exported markdown works with GitHub, GitLab, and other renderers
+
+**Web Editor Features:**
+1. **Live Editing**: Open `http://localhost:8080/editor` in your browser
+2. **Syntax Highlighting**: `#` prefixed markdown and Python code blocks
+3. **Live Preview**: See rendered output in real-time
+4. **Export Options**: Click **📄 Export HTML** or **📝 Export MD**
+5. **File Execution**: Use Ctrl+S to execute code and update preview
+
+## 🎯 Use Cases
+
+- **📊 Data Science Reports**: Python scripts that execute analysis AND generate beautiful reports
+- **📚 Executable Documentation**: Documentation that actually runs and validates itself
+- **🎓 Interactive Tutorials**: Learning materials that students can execute and modify
+- **📈 Living Dashboards**: Python scripts that generate dynamic visual reports
+- **🔬 Reproducible Research**: Research papers where the code actually runs
+- **🧪 Literate Programming**: Self-documenting code through executable markdown comments
+- **📋 Technical Specifications**: Specs that include working code examples
+- **🤖 AI/ML Workflows**: Machine learning pipelines with embedded documentation
+
+## 📁 Project Structure
+
+```file
+PyMD/
+├── pymd/                   # Main package directory
+│   ├── __init__.py        # Package initialization
+│   ├── cli.py             # Command-line interface
+│   ├── renderer.py        # Core rendering engine
+│   └── server.py          # Live preview server
+├── example.pymd           # Example PyMD document
+├── pyproject.toml         # Package configuration
+├── MANIFEST.in            # Additional files to include
+├── LICENSE                # MIT License
+├── requirements.txt       # Python dependencies
+└── README.md              # This file
+```
 
 ## 🤝 Contributing
 

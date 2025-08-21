@@ -1,46 +1,47 @@
-# PyExecMD: Python-Executable Markdown
-
-Welcome to PyMD! This document demonstrates the powerful combination of markdown-style syntax with Python code execution.
-
-## Key Features
-
-- **Markdown Syntax**: Use familiar markdown outside code blocks
-- **Python Execution**: Run Python code inside ``` blocks  
-- **Variable Persistence**: Variables persist across code blocks
-- **Beautiful Output**: Clean, responsive HTML rendering
-
-Let's explore these features with live examples!
-
-## Basic Python Execution
-
-```
+# # PyMD: Python-Executable Markdown
+#
+# Welcome to PyMD! This document demonstrates the powerful combination of markdown-style syntax with Python code execution.
+#
+# ## Key Features
+#
+# - **Markdown Syntax**: Use familiar markdown prefixed with `#` 
+# - **Python Execution**: Run Python code inside ``` blocks  
+# - **Variable Persistence**: Variables persist across code blocks
+# - **Beautiful Output**: Clean, responsive HTML rendering
+# - **Executable Files**: Run directly as Python with `python filename.pymd`
+#
+# Let's explore these features with live examples!
+#
+# ## Basic Python Execution
+#
+# ```
 # Define some variables
-name = "PyExecMD"
-version = "0.1.0"
-year = 2025
+name = "PyMD"
+version = "2.0" 
+year = "2025"
 
-pymd.text(f"Welcome to **{name}** v{version}!")
-pymd.text(f"Created in {year}")
-```
-
-The variables we just defined are available in subsequent code blocks:
-
-```
-pymd.text(f"Confirming: We're using **{name}** version **{version}**")
+print(f"## Welcome to **{name}** v{version}!")
+print(f"Created in {year}")
+# ```
+#
+# The variables we just defined are available in subsequent code blocks:
+#
+# ```
+print(f"Confirming: We're using **{name}** version **{version}**")
 
 # Let's do some calculations
 numbers = [1, 2, 3, 4, 5]
 total = sum(numbers)
 average = total / len(numbers)
 
-pymd.text(f"Numbers: {numbers}")
-pymd.text(f"Sum: **{total}**")
-pymd.text(f"Average: **{average}**")
-```
-
-## Data Analysis with Pandas
-
-```
+print(f"Numbers: {numbers}")
+print(f"Sum: **{total}**")
+print(f"Average: **{average}**")
+# ```
+#
+# ## Data Analysis with Pandas
+#
+# ```
 import pandas as pd
 import numpy as np
 
@@ -56,336 +57,88 @@ for product in products:
         data.append({'Product': product, 'Month': month, 'Sales': sales})
 
 df = pd.DataFrame(data)
-pymd.text("**Sample Sales Data:**")
-pymd.table(df.head(10))
-```
-
-Let's analyze this data:
-
-```
+print("**Sample Sales Data:**")
+print(df.head(10).to_string())
+# ```
+#
+# Let's analyze this data:
+#
+# ```
 # Calculate total sales by product
 product_totals = df.groupby('Product')['Sales'].sum().sort_values(ascending=False)
-pymd.text("**Total Sales by Product:**")
+print("**Total Sales by Product:**")
 for product, sales in product_totals.items():
-    pymd.text(f"  {product}: **${sales:,}**")
+    print(f"  {product}: **${sales:,}**")
 
-pymd.text(f"**Best performing product:** {product_totals.index[0]}")
-pymd.text(f"**Total sales across all products:** ${product_totals.sum():,}")
-```
-
-## Data Visualization
-
-```
-import matplotlib.pyplot as plt
-
-# Create a sales trend chart
-monthly_totals = df.groupby('Month')['Sales'].sum()
-
-plt.figure(figsize=(10, 6))
-plt.plot(monthly_totals.index, monthly_totals.values, marker='o', linewidth=2, markersize=8)
-plt.title('Total Sales Trend by Month', fontsize=16, fontweight='bold')
-plt.xlabel('Month', fontsize=12)
-plt.ylabel('Total Sales ($)', fontsize=12)
-plt.grid(True, alpha=0.3)
-plt.xticks(rotation=45)
-
-# Add value labels on points
-for i, v in enumerate(monthly_totals.values):
-    plt.text(i, v + 20, f'${v:,}', ha='center', va='bottom', fontweight='bold')
-
-plt.tight_layout()
-pymd.image(plt.gcf(), "Monthly sales trend showing business growth")
-```
-
-Let's also create a product comparison chart:
-
-```
-# Product performance comparison
-plt.figure(figsize=(10, 6))
-bars = plt.bar(product_totals.index, product_totals.values, 
-               color=['#FF6B6B', '#4ECDC4', '#45B7D1'], alpha=0.8)
-
-plt.title('Total Sales by Product', fontsize=16, fontweight='bold')
-plt.xlabel('Product', fontsize=12)
-plt.ylabel('Total Sales ($)', fontsize=12)
-plt.grid(True, alpha=0.3, axis='y')
-
-# Add value labels on bars
-for bar, value in zip(bars, product_totals.values):
-    plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 50, 
-             f'${value:,}', ha='center', va='bottom', fontweight='bold')
-
-plt.tight_layout()
-pymd.image(plt.gcf(), "Product sales comparison showing Widget A leading")
-```
-
-## Advanced Python Features
-
-```
-# Define a custom analysis function
-def analyze_product_performance(df, product_name):
-    product_data = df[df['Product'] == product_name]
-    
-    stats = {
-        'total_sales': product_data['Sales'].sum(),
-        'avg_monthly': product_data['Sales'].mean(),
-        'best_month': product_data.loc[product_data['Sales'].idxmax(), 'Month'],
-        'worst_month': product_data.loc[product_data['Sales'].idxmin(), 'Month'],
-        'consistency': product_data['Sales'].std()
-    }
-    
-    return stats
-
-# Analyze each product
-pymd.h2("Detailed Product Analysis")
-
-for product in products:
-    stats = analyze_product_performance(df, product)
-    pymd.h3(product)
-    pymd.text(f"Total Sales: **${stats['total_sales']:,}**")
-    pymd.text(f"Monthly Average: **${stats['avg_monthly']:.0f}**")
-    pymd.text(f"Best Month: **{stats['best_month']}**")
-    pymd.text(f"Worst Month: **{stats['worst_month']}**")
-    pymd.text(f"Consistency (std dev): **${stats['consistency']:.2f}**")
-```
-
-## Code Display Feature
-
-Sometimes you want to show code without executing it. PyMD provides two ways to display code:
-
-### Method 1: Using the `pymd.code()` function
-
-```
-# Example algorithm for reference
-algorithm_code = '''
-def fibonacci(n):
-    """Generate fibonacci sequence up to n terms."""
-    sequence = []
-    a, b = 0, 1
-    
-    for _ in range(n):
-        sequence.append(a)
-        a, b = b, a + b
-    
-    return sequence
-'''
-
-pymd.code(algorithm_code, "python")
-pymd.text("**Algorithm example displayed above using pymd.code() (not executed)**")
-```
-
-### Method 2: Using four backticks (````) for display-only blocks
-
-For even cleaner syntax, use four backticks to create display-only code blocks:
-
-````
-def fibonacci(n):
-    // Generate fibonacci sequence up to n terms
-    sequence = []
-    a, b = 0, 1
-    
-    for i in range(n):
-        sequence.append(a)
-        a, b = b, a + b
-    
-    return sequence
-
-def is_prime(num):
-    // Check if a number is prime
-    if num < 2:
-        return False
-    for i in range(2, int(num ** 0.5) + 1):
-        if num % i == 0:
-            return False
-    return True
-
-// Example usage (this won't execute)
-fib_numbers = fibonacci(8)
-prime_check = is_prime(17)
-````
-
-**Key differences:**
-- **Three backticks (```)**: Execute Python code and show output
-- **Four backticks (````)**: Display code with syntax highlighting but don't execute
-- Display-only blocks use `//` for comments (cleaner presentation)
-- Display-only blocks have a **gray background** for easy identification
-
-### Visual Styling Comparison
-
-This shows how code appears when executed:
-```
-# This block executes and shows output
-example_list = [1, 2, 3, 4, 5]
-print(f"Executed: {example_list}")
-```
-
-This shows how the same code appears as display-only:
-````
-// This block is displayed but not executed
-example_list = [1, 2, 3, 4, 5]
-print(f"Display only: {example_list}")
-````
-
-Notice the different background colors and comment styles!
-
-Now let's actually implement and use those functions:
-
-```
-# Implement the fibonacci function
-def fibonacci(n):
-    sequence = []
-    a, b = 0, 1
-    for _ in range(n):
-        sequence.append(a)
-        a, b = b, a + b
-    return sequence
-
-def is_prime(num):
-    if num < 2:
-        return False
-    for i in range(2, int(num ** 0.5) + 1):
-        if num % i == 0:
-            return False
-    return True
-
-# Generate fibonacci sequence
-fib_sequence = fibonacci(10)
-pymd.text(f"First 10 Fibonacci numbers: **{fib_sequence}**")
-
-# Check some numbers for primality
-test_numbers = [17, 25, 29, 35, 41]
-pymd.text("**Prime number check:**")
-for num in test_numbers:
-    result = "prime" if is_prime(num) else "not prime"
-    pymd.text(f"  {num} is **{result}**")
-```
-
-## PyMD Helper Functions
-
-You can also use PyMD functions to create content programmatically:
-
-```
-pymd.h2("Programmatically Generated Content")
-pymd.text("This header and text were created using PyMD functions within a code block.")
-
-# Create a summary table
-summary_data = pd.DataFrame({
-    'Metric': ['Total Products', 'Total Months', 'Total Records', 'Average Sale', 'Max Sale'],
-    'Value': [len(products), len(months), len(df), f"${df['Sales'].mean():.2f}", f"${df['Sales'].max()}"]
-})
-
-pymd.table(summary_data)
-```
-
-## Markdown Features
-
-Outside code blocks, you can use standard markdown syntax:
-
-### Lists Work Great
-
-- First unordered item
-- Second unordered item  
-- Third unordered item
-
-1. First ordered item
-2. Second ordered item
-3. Third ordered item
-
-### Mixed Content
-
-You can seamlessly mix markdown content with code blocks. This makes documentation clean and readable while keeping the code execution powerful.
-
-## Interactive Input with Mock Values
-
-PyMD supports interactive input through a mock system for non-interactive document execution:
-
-```
+print(f"**Best performing product:** {product_totals.index[0]}")
+print(f"**Total sales across all products:** ${product_totals.sum():,}")
+# ```
+#
+# ## Interactive Input with Mock Values
+#
+# PyMD supports interactive input through a mock system for non-interactive document execution:
+#
+# ```
 # Interactive input with mock values
 user_name = input("What's your name? ") # input: Alice
 user_age = input("How old are you? ") # input: 28
 
-pymd.h3(f"User Profile: {user_name}")
-pymd.text(f"**Name:** {user_name}")
-pymd.text(f"**Age:** {user_age}")
+print(f"### User Profile: {user_name}")
+print(f"**Name:** {user_name}")
+print(f"**Age:** {user_age}")
 
 # Calculate birth year
 birth_year = 2025 - int(user_age)
-pymd.text(f"**Estimated birth year:** {birth_year}")
-```
-
-Input without mock values defaults to empty string:
-
-```
+print(f"**Estimated birth year:** {birth_year}")
+# ```
+#
+# Input without mock values defaults to empty string:
+#
+# ```
 # Input without mock value (defaults to empty)
 optional_comment = input("Any comments? ")
 
 if optional_comment:
-    pymd.text(f"**Comment:** {optional_comment}")
+    print(f"**Comment:** {optional_comment}")
 else:
-    pymd.text("**No comment provided** (empty mock value)")
-```
-
-Multiple inputs work sequentially:
-
-```
-# Multiple input example
-first_name = input("First name: ") # input: John
-last_name = input("Last name: ") # input: Doe
-favorite_color = input("Favorite color: ") # input: Blue
-
-pymd.h3("Personal Information")
-pymd.text(f"- **Full Name:** {first_name} {last_name}")
-pymd.text(f"- **Favorite Color:** {favorite_color}")
-
-# Create a simple profile
-profile = {
-    'name': f"{first_name} {last_name}",
-    'color': favorite_color,
-    'profile_id': len(first_name) + len(last_name)
-}
-
-pymd.text(f"**Generated Profile ID:** {profile['profile_id']}")
-```
-
-## Interactive Development
-
-```
+    print("**No comment provided** (empty mock value)")
+# ```
+#
+# ## Interactive Development
+#
+# ```
 # Real-time updates
 import datetime
 current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-pymd.text(f"Document last executed: **{current_time}**")
+print(f"Document last executed: **{current_time}**")
 
 # You can modify this code and see results update immediately
 message = "Try changing this message and saving the file!"
-pymd.text(f"**Message:** {message}")
-```
-
-## Conclusion
-
-This example demonstrates PyMD's powerful features:
-
-1. **Clean Syntax**: Markdown-style headers, lists, and text
-2. **Code Execution**: Python code runs and displays output
-3. **Variable Persistence**: Data flows between code blocks
-4. **Rich Visualizations**: Matplotlib charts render beautifully
-5. **Data Analysis**: Full pandas functionality
-6. **Interactive Input**: Mock input system for non-interactive execution
-7. **Mixed Content**: Seamless blend of documentation and code
-
-```
+print(f"**Message:** {message}")
+# ```
+#
+# ## Conclusion
+#
+# This example demonstrates PyMD's powerful features:
+#
+# 1. **Executable Files**: Can be run directly with `python example.pymd`
+# 2. **Clean Syntax**: Markdown-style headers, lists, and text prefixed with `#`
+# 3. **Code Execution**: Python code runs and print output becomes markdown
+# 4. **Variable Persistence**: Data flows between code blocks
+# 5. **Mixed Content**: Seamless blend of documentation and executable code
+#
+# ```
 # Final message
-success_message = "🎉 PyMD makes technical documentation beautiful and interactive!"
-pymd.text(f"**Success Message:** {success_message}")
+success_message = "🎉 PyMD makes technical documentation beautiful and executable!"
+print(f"**Success Message:** {success_message}")
 
 # Show some final stats
-pymd.h3("Document Stats")
-pymd.text(f"- Data points analyzed: **{len(df)}**")
-pymd.text(f"- Visualizations created: **2**")
-pymd.text(f"- Functions defined: **3**")
-pymd.text(f"- Variables available: **{len([var for var in globals() if not var.startswith('_')])}**")
-```
-
-That's PyMD in action! Try modifying the code blocks above and watch the results update in real-time with the live preview server.
-
-// This is a comment - it won't appear in the rendered output
-// Perfect for leaving notes during development!
+print("### Document Stats")
+print(f"- Data points analyzed: **{len(df)}**")
+print(f"- Variables available: **{len([var for var in globals() if not var.startswith('_')])}**")
+# ```
+#
+# That's PyMD in action! Try modifying the code blocks above and watch the results update in real-time with the live preview server.
+#
+# // This is a comment - it won't appear in the rendered output
+# // Perfect for leaving notes during development!
