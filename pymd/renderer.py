@@ -96,6 +96,12 @@ class PyMD:
             return self.renderer.render_image(plot_obj, caption)
         return f'<p>Image: {caption}</p>'
 
+    def video(self, video_path: str, caption: str = '', width: str = '100%', height: str = 'auto', controls: bool = True, autoplay: bool = False, loop: bool = False) -> str:
+        """Render video from file path or video data"""
+        if self.renderer:
+            return self.renderer.render_video(video_path, caption, width, height, controls, autoplay, loop)
+        return f'<p>Video: {caption}</p>'
+
     def table(self, data) -> str:
         """Render pandas DataFrame or other tabular data"""
         if self.renderer:
@@ -124,6 +130,11 @@ class PyMDRenderer:
         self.image_counter = 0
         self.captured_images = []  # Store info about captured images
         self._custom_plt = None  # Store custom plt object for reuse
+        
+        # Video handling
+        self.videos_dir = os.path.join(self.output_dir, 'videos')
+        self.video_counter = 0
+        self.captured_videos = []  # Store info about captured videos
 
     def add_element(self, element_type: str, content: Any, html: str):
         """Add a rendered element to the document"""
@@ -137,6 +148,11 @@ class PyMDRenderer:
         """Ensure the images directory exists"""
         if not os.path.exists(self.images_dir):
             os.makedirs(self.images_dir, exist_ok=True)
+    
+    def _ensure_videos_dir(self):
+        """Ensure the videos directory exists"""
+        if not os.path.exists(self.videos_dir):
+            os.makedirs(self.videos_dir, exist_ok=True)
 
     def _save_figure_to_file(self, fig, filename: str = None, caption: str = '') -> Dict[str, str]:
         """Save matplotlib figure to file and return image info"""
@@ -408,6 +424,84 @@ class PyMDRenderer:
         except Exception as e:
             error_html = f'<p class="error">Error rendering image: {str(e)}</p>'
             self.add_element('image', f'Error: {str(e)}', error_html)
+            return error_html
+
+    def _save_video_to_file(self, video_path: str, filename: str = None, caption: str = '') -> Dict[str, str]:
+        """Copy video file to videos directory and return video info"""
+        import shutil
+        
+        self._ensure_videos_dir()
+        
+        if filename is None:
+            self.video_counter += 1
+            # Get original file extension
+            _, ext = os.path.splitext(video_path)
+            if not ext:
+                ext = '.mp4'  # default extension
+            filename = f"video_{self.video_counter}_{uuid.uuid4().hex[:8]}{ext}"
+        
+        file_path = os.path.join(self.videos_dir, filename)
+        relative_path = f"videos/{filename}"
+        
+        try:
+            # Copy video file to videos directory
+            shutil.copy2(video_path, file_path)
+        except Exception as e:
+            raise Exception(f"Failed to copy video file: {str(e)}")
+        
+        video_info = {
+            'filename': filename,
+            'file_path': file_path,
+            'relative_path': relative_path,
+            'original_path': video_path,
+            'caption': caption
+        }
+        
+        self.captured_videos.append(video_info)
+        return video_info
+
+    def render_video(self, video_path: str, caption: str = '', width: str = '100%', height: str = 'auto', controls: bool = True, autoplay: bool = False, loop: bool = False) -> str:
+        """Render video from file path"""
+        try:
+            # Check if video file exists
+            if not os.path.exists(video_path):
+                raise FileNotFoundError(f"Video file not found: {video_path}")
+            
+            # Save video to videos directory and get info
+            video_info = self._save_video_to_file(video_path, caption=caption)
+            
+            # Build video attributes
+            video_attrs = []
+            if controls:
+                video_attrs.append('controls')
+            if autoplay:
+                video_attrs.append('autoplay')
+            if loop:
+                video_attrs.append('loop')
+            
+            attrs_str = ' '.join(video_attrs)
+            if attrs_str:
+                attrs_str = ' ' + attrs_str
+            
+            # Create HTML for video
+            html = f'''
+            <div class="video-container">
+                <video width="{width}" height="{height}"{attrs_str}>
+                    <source src="{video_info['relative_path']}" type="video/mp4">
+                    <source src="{video_info['relative_path']}" type="video/webm">
+                    <source src="{video_info['relative_path']}" type="video/ogg">
+                    Your browser does not support the video tag.
+                </video>
+                {f'<p class="video-caption">{caption}</p>' if caption else ''}
+            </div>
+            '''
+            
+            self.add_element('video', video_info, html)
+            return html
+
+        except Exception as e:
+            error_html = f'<p class="error">Error rendering video: {str(e)}</p>'
+            self.add_element('video', f'Error: {str(e)}', error_html)
             return error_html
 
     def _process_bold_text_in_content(self, text: str) -> str:
@@ -1224,6 +1318,24 @@ class PyMDRenderer:
             margin-top: 8px;
         }}
         
+        .video-container {{
+            margin: 20px 0;
+            text-align: center;
+        }}
+        
+        .video-container video {{
+            max-width: 100%;
+            height: auto;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }}
+        
+        .video-caption {{
+            font-style: italic;
+            color: #666;
+            margin-top: 8px;
+        }}
+        
         .pymd-table {{
             border-collapse: collapse;
             width: 100%;
@@ -1478,6 +1590,20 @@ class PyMDRenderer:
                     # Fallback for legacy images or text-based images
                     markdown_parts.append(f"![{content}]({content})")
                 markdown_parts.append('')
+            elif element_type == 'video':
+                # Videos - content contains the video_info dict
+                if isinstance(content, dict) and 'relative_path' in content:
+                    # For markdown, we can use HTML video tags since most markdown processors support HTML
+                    markdown_parts.append(f'<video controls width="100%">')
+                    markdown_parts.append(f'  <source src="{content["relative_path"]}" type="video/mp4">')
+                    markdown_parts.append(f'  Your browser does not support the video tag.')
+                    markdown_parts.append(f'</video>')
+                    if content['caption']:
+                        markdown_parts.append(f"*{content['caption']}*")
+                else:
+                    # Fallback
+                    markdown_parts.append(f"[Video: {content}]")
+                markdown_parts.append('')
             elif element_type == 'ul':
                 # Unordered lists
                 for item in content:
@@ -1537,25 +1663,25 @@ class PyMDRenderer:
 if __name__ == "__main__":
     renderer = PyMDRenderer()
 
-    # Example PyMD content with new ``` syntax
+    # Example PyMD content with new format (# prefixed markdown)
     sample_content = """
 // This is a comment and will be ignored
 
-# Welcome to PyMD
-This is a demonstration of PyMD with new ``` syntax for code blocks.
-
-## Basic Features
-
-- Markdown content outside code blocks
-- Python code execution inside ``` blocks
-- Variables persist across code blocks
-- Clean separation of content and code
-
-1. First feature: Headers and lists work normally
-2. Second feature: Code blocks are clearly separated
-3. Third feature: Mixed content is easy to read
-
-## Python Code Execution
+# # Welcome to PyMD
+# This is a demonstration of PyMD with the new format using # prefixed markdown.
+#
+# ## Basic Features
+#
+# - Markdown content prefixed with #
+# - Python code execution inside ``` blocks
+# - Variables persist across code blocks  
+# - Clean separation of content and code
+#
+# 1. First feature: Headers and lists work normally
+# 2. Second feature: Code blocks are clearly separated
+# 3. Third feature: Mixed content is easy to read
+#
+# ## Python Code Execution
 
 ```
 x = 5
@@ -1563,7 +1689,7 @@ y = 10
 print(f"Sum: {x + y}")
 ```
 
-## Data Processing
+# ## Data Processing
 
 ```
 import random
@@ -1573,18 +1699,29 @@ average = sum(data) / len(data)
 print(f"Average: {average:.2f}")
 ```
 
-## Using PyMD Functions
+# ## Using PyMD Functions
 
 ```
-pymd.h2("Generated Header")
-pymd.text(f"The average from above is: {average:.2f}")
+print("## Generated Header")
+print(f"The average from above is: **{average:.2f}**")
 ```
 
-Regular text works perfectly between code blocks!
+# Regular text works perfectly with the new format!
 
 ```
 print("Variables persist across blocks!")
-print(f"x = {x}, y = {y}")
+print(f"**x = {x}, y = {y}**")
+```
+
+# ## Video Support Example
+
+```
+# Demonstrate video functionality (would work with real video file)
+print("### Video Rendering")
+print("PyMD now supports video rendering:")
+print("```python")
+print("pymd.video('sample.mp4', 'Demo video', width='80%')")
+print("```")
 ```
 """
 

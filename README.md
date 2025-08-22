@@ -4,7 +4,7 @@
 
 PyMD is a revolutionary markup language that creates **executable Python files** that also render beautifully as markdown documents. All markdown content is prefixed with `#` (making it Python comments), while code blocks contain regular executable Python code that prints markdown during rendering.
 
-![Screen Shot](./v0.1.6.png)
+![Screen Shot](./images/v0.1.6.png)
 
 ## ✨ Features
 
@@ -18,6 +18,7 @@ PyMD is a revolutionary markup language that creates **executable Python files**
 - **🔴 Live Preview**: Real-time rendering with auto-refresh as you edit
 - **📊 Rich Visualizations**: Built-in support for matplotlib, pandas, and other data science libraries
 - **🖼️ Automatic Image Capture**: `plt.show()` automatically saves and renders plots in HTML and Markdown
+- **🎬 Video Support**: Built-in video rendering with customizable controls, autoplay, and loop options
 - **📋 Table Support**: Automatic detection and rendering of markdown tables with proper formatting
 - **🧮 Dynamic Content**: Execute Python code and display results inline
 - **📱 Beautiful Output**: Clean, responsive HTML with modern styling
@@ -116,6 +117,7 @@ python -m pymd.cli render my_document.pymd -o output.html
 # Render to Markdown
 python -m pymd.cli render my_document.pymd -f markdown -o output.md
 ```
+
 </details>
 
 ### Web Editor Features
@@ -411,6 +413,7 @@ print(f"Factorial of 5 is: **{result}**")
 - **🎨 Clean Rendering**: `#` prefixes hidden during HTML/Markdown export
 - **📊 Rich Output**: Print statements can output headers, lists, tables, even HTML
 - **🖼️ Automatic Plot Capture**: `plt.show()` calls automatically save and render images
+- **🎬 Video Rendering**: Use `pymd.video()` to embed videos with customizable options
 - **📋 Smart Table Rendering**: Markdown tables are automatically detected and styled
 - **💡 Smart Comments**: Use `//` in display blocks for cleaner presentation
 - **↔️ Dual Purpose**: Same file serves as Python script AND beautiful document
@@ -532,6 +535,57 @@ plt.show()
 - **HTML fallback**: Base64 encoding for portability
 - **Markdown compatible**: Standard `![](images/filename.png)` syntax
 
+### 🎬 Video Rendering
+
+PyMD now supports video embedding with the `pymd.video()` function:
+
+```python
+# # Video Demonstration
+#
+# Let's embed a video in our document:
+#
+# ```
+# Basic video with caption
+pymd.video("demo.mp4", "This is a demo video")
+
+# Customized video with options
+pymd.video("tutorial.mp4", "Tutorial video", 
+          width="80%", 
+          autoplay=True, 
+          loop=True, 
+          controls=True)
+
+# Background video (no controls)
+pymd.video("background.mp4", 
+          width="100%", 
+          height="400px",
+          controls=False, 
+          autoplay=True, 
+          loop=True)
+# ```
+```
+
+**Video Features:**
+
+- **Automatic file management**: Videos copied to `videos/` directory
+- **Multiple format support**: MP4, WebM, OGG with automatic source tags
+- **Customizable attributes**: width, height, controls, autoplay, loop
+- **Caption support**: Optional video descriptions
+- **HTML5 compatible**: Modern video tags with fallback sources
+- **Markdown export**: HTML video tags preserved in markdown output
+
+**Supported Parameters:**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `video_path` | str | required | Path to the video file |
+| `caption` | str | `''` | Optional caption for the video |  
+| `width` | str | `'100%'` | Video width (CSS format) |
+| `height` | str | `'auto'` | Video height (CSS format) |
+| `controls` | bool | `True` | Show video controls |
+| `autoplay` | bool | `False` | Auto-play video on load |
+| `loop` | bool | `False` | Loop video playback |
+
 ### 💡 Best Practices
 
 - **File Structure**: Start with `# # Title` as the main header
@@ -542,7 +596,8 @@ plt.show()
 - **Clean Syntax**: Keep markdown content in `#` prefixed sections, code in blocks
 - **Tables**: Use standard markdown table syntax with `|` separators for static tables
 - **Images**: Use `plt.show()` for automatic plot capture, or `pymd.image()` for manual control
-- **File Organization**: Images are saved to `images/` directory relative to output file
+- **Videos**: Use `pymd.video()` to embed videos with appropriate controls and sizing
+- **File Organization**: Images saved to `images/` directory, videos to `videos/` directory
 - **Performance**: Large plots are automatically optimized for web display
 
 ### CLI Commands
@@ -666,6 +721,22 @@ python -m pymd.cli serve --file example.pymd --port 8080
 - **Source Files**: Remain executable Python scripts with commented markdown
 - **Compatibility**: Exported markdown works with GitHub, GitLab, and other renderers
 
+**Output Directory Structure:**
+
+After rendering documents with images and videos, your output directory will look like:
+
+```bash
+my_project/
+├── document.pymd           # Source PyMD file
+├── document.html           # Rendered HTML output
+├── images/                 # Auto-generated plot images
+│   ├── plot_1_abc123.png
+│   └── plot_2_def456.png
+└── videos/                 # Embedded video files
+    ├── video_1_ghi789.mp4
+    └── video_2_jkl012.mp4
+```
+
 **Web Editor Features:**
 
 1. **Live Editing**: Open `http://localhost:8080/editor` in your browser
@@ -677,15 +748,15 @@ python -m pymd.cli serve --file example.pymd --port 8080
 ## 🎯 Use Cases
 
 - **📊 Data Science Reports**: Python scripts that execute analysis AND generate beautiful reports with automatic plot capture
-- **📚 Executable Documentation**: Documentation that actually runs and validates itself, with embedded visualizations
-- **🎓 Interactive Tutorials**: Learning materials that students can execute and modify, featuring live charts and tables
+- **📚 Executable Documentation**: Documentation that actually runs and validates itself, with embedded visualizations and demo videos
+- **🎓 Interactive Tutorials**: Learning materials that students can execute and modify, featuring live charts, tables, and instructional videos
 - **📈 Living Dashboards**: Python scripts that generate dynamic visual reports with automatic image saving
 - **🔬 Reproducible Research**: Research papers where the code actually runs and produces publication-ready figures
 - **🧪 Literate Programming**: Self-documenting code through executable markdown comments with inline visualizations
 - **📋 Technical Specifications**: Specs that include working code examples and automatically generated plots
 - **🤖 AI/ML Workflows**: Machine learning pipelines with embedded documentation and automatic model visualization
 - **📑 Business Reports**: Automated reports with data tables and charts that update when code runs
-- **🎨 Presentation Materials**: Technical presentations that combine code, explanation, and live visualizations
+- **🎨 Presentation Materials**: Technical presentations that combine code, explanation, live visualizations, and demo videos
 
 ## 📁 Project Structure
 

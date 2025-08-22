@@ -103,19 +103,22 @@ def create_command(args):
             f"Error: File '{args.filename}' already exists. Use --force to overwrite.")
         return 1
 
-    template_content = '''```
-# Welcome to PyExecMD!
-pymd.h1("My First PyExecMD Document")
+    template_content = '''# # Welcome to PyMD!
+#
+# PyMD is a Python-based markup language that lets you create documents with executable code!
+#
+# ## Basic Features
+#
+# - **Markdown Syntax**: Use familiar markdown prefixed with `#`
+# - **Python Execution**: Run Python code inside ``` blocks
+# - **Variable Persistence**: Variables persist across code blocks
+# - **Beautiful Output**: Clean, responsive HTML rendering
+#
+# ## Code and Data
+#
+# Let's create some data and visualize it:
 
-pymd.text("PyExecMD is a Python-based markup language that lets you create documents with executable code!")
-
-pymd.h2("Basic Text")
-pymd.text(
-    "You can create paragraphs, headings, and formatted text using Python syntax.")
-
-pymd.h2("Code and Data")
-pymd.text("Let's create some data and visualize it:")
-
+```
 # Import libraries
 import numpy as np
 import matplotlib.pyplot as plt
@@ -125,7 +128,11 @@ import pandas as pd
 x = np.linspace(0, 10, 100)
 y = np.sin(x) + np.random.normal(0, 0.1, 100)
 
-pymd.h3("Data Visualization")
+print("## Data Visualization")
+print("Creating a beautiful sine wave with noise...")
+```
+
+```
 plt.figure(figsize=(10, 6))
 plt.plot(x, y, 'b-', alpha=0.7, label='Data')
 plt.plot(x, np.sin(x), 'r--', label='Sin(x)')
@@ -134,12 +141,14 @@ plt.xlabel("X values")
 plt.ylabel("Y values")
 plt.legend()
 plt.grid(True, alpha=0.3)
+plt.show()
+```
 
-pymd.image(plt.gcf(), "A beautiful plot showing sine wave with noise")
+# ## Data Tables
+#
+# You can also display tabular data:
 
-pymd.h3("Data Tables")
-pymd.text("You can also display tabular data:")
-
+```
 # Create a sample DataFrame
 df = pd.DataFrame({
     'Name': ['Alice', 'Bob', 'Charlie', 'Diana'],
@@ -148,40 +157,46 @@ df = pd.DataFrame({
     'City': ['New York', 'London', 'Tokyo', 'Paris']
 })
 
-pymd.table(df)
+print("### Sample Data Table")
+print(df.to_string())
+```
 
-pymd.h2("Interactive Content")
-pymd.text("Since PyExecMD executes Python code, you can create dynamic content:")
+# ## Interactive Content
+#
+# Since PyMD executes Python code, you can create dynamic content:
 
+```
 # Calculate some statistics
 mean_score = df['Score'].mean()
 max_score = df['Score'].max()
 
-pymd.text(f"The average score is {mean_score:.1f}")
-pymd.text(f"The highest score is {max_score:.1f}")
+print(f"**Average score:** {mean_score:.1f}")
+print(f"**Highest score:** {max_score:.1f}")
+```
 
-pymd.h2("Code Blocks")
-pymd.text("You can also display code without executing it:")
+# ## Video Support (NEW!)
+#
+# PyMD now supports video rendering:
 
-sample_code = \'\'\'
+```
+# Example video usage (would work with real video files)
+print("### Video Rendering Example")
+print("```python")
+print("# Basic video with caption")
+print("pymd.video('my_video.mp4', 'Demo video caption')")
+print("")
+print("# Customized video")
+print("pymd.video('demo.mp4', 'Demo', width='80%', autoplay=True)")
+print("```")
+```
 
-
-def fibonacci(n):
-    if n <= 1:
-        return n
-    return fibonacci(n-1) + fibonacci(n-2)
-
-
-print([fibonacci(i) for i in range(10)])
-\'\'\'
-
-
-pymd.code(sample_code, "python")
-
-pymd.h2("Conclusion")
-pymd.text("This is just the beginning! PyExecMD combines the simplicity of Markdown with the power of Python.")
-pymd.text("Happy coding! 🐍✨")
-```'''
+# ## Conclusion
+#
+# This is just the beginning! PyMD combines the simplicity of Markdown with the power of Python.
+#
+# **Happy coding!** 🐍✨
+#
+# Try modifying the code above and watch the results update in real-time!'''
 
     try:
         with open(args.filename, 'w', encoding='utf-8') as f:

@@ -117,6 +117,66 @@ message = "Try changing this message and saving the file!"
 print(f"**Message:** {message}")
 # ```
 #
+# ## Video Support (NEW!)
+#
+# PyMD now supports video rendering with the new `pymd.video()` function:
+#
+# ```
+# Video rendering API demonstration
+print("## Video Rendering Features")
+print("PyMD now supports embedded videos with customizable options:")
+
+# Example API calls (would work with real video files):
+print("### Basic Video Usage")
+print("```python")
+print("# Basic video with caption")
+print("pymd.video('my_video.mp4', 'This is my video caption')")
+print("")
+print("# Customized video with options")
+print("pymd.video('demo.mp4', 'Demo video', width='80%', autoplay=True, loop=True)")
+print("")
+print("# Background video without controls")
+print("pymd.video('bg_video.mp4', width='100%', controls=False, autoplay=True, loop=True)")
+print("```")
+# ```
+#
+# ### Video API Reference
+#
+# The `pymd.video()` function supports these parameters:
+#
+# | Parameter | Type | Default | Description |
+# |-----------|------|---------|-------------|
+# | video_path | str | required | Path to video file |
+# | caption | str | '' | Optional caption |  
+# | width | str | '100%' | Video width (CSS) |
+# | height | str | 'auto' | Video height (CSS) |
+# | controls | bool | True | Show video controls |
+# | autoplay | bool | False | Auto-play on load |
+# | loop | bool | False | Loop playback |
+#
+# ```
+# Demonstrate video file organization
+print("### Video File Management")
+print("Videos are automatically organized in your output:")
+print("```")
+print("output/")
+print("├── videos/")
+print("│   ├── video_1_abc123.mp4")
+print("│   ├── video_2_def456.mp4") 
+print("│   └── ...")
+print("├── images/")
+print("│   └── (existing plots)")
+print("└── output.html")
+print("```")
+
+print("**Key Features:**")
+print("- Automatic video file copying to output directory")
+print("- Support for MP4, WebM, and OGG formats")
+print("- HTML5 video tags with fallback sources")
+print("- Responsive styling with rounded corners")
+print("- Error handling for missing files")
+# ```
+#
 # ## Conclusion
 #
 # This example demonstrates PyMD's powerful features:
