@@ -60,34 +60,6 @@ pip install pyexecmd
 
 ## Usage
 
-### For Conda Users (Recommended Development Setup)
-
-If you're using conda for development, first activate the environment:
-
-```bash
-# Initialize conda and activate environment
-source /opt/miniconda3/etc/profile.d/conda.sh && conda activate PyMD
-
-# Verify activation
-python --version && which python
-```
-
-Then use standard Python commands:
-
-```bash
-# Create a new PyMD document
-python -m pymd.cli create my_document.pymd
-
-# Start live preview with web editor
-python -m pymd.cli serve --file my_document.pymd --port 8080
-
-# Render to HTML
-python -m pymd.cli render my_document.pymd -o output.html
-
-# Render to Markdown
-python -m pymd.cli render my_document.pymd -f markdown -o output.md
-```
-
 ### For PyPI Installation
 
 1. **Create a new PyMD document:**
@@ -115,6 +87,36 @@ python -m pymd.cli render my_document.pymd -f markdown -o output.md
    # Render to Markdown
    pyexecmd render my_document.pymd -f markdown -o output.md
    ```
+
+<details>
+<summary> For Conda Users (Recommended Development Setup) </summary>
+
+If you're using conda for development, first activate the environment:
+
+```bash
+# Initialize conda and activate environment
+source /opt/miniconda3/etc/profile.d/conda.sh && conda activate PyMD
+
+# Verify activation
+python --version && which python
+```
+
+Then use standard Python commands:
+
+```bash
+# Create a new PyMD document
+python -m pymd.cli create my_document.pymd
+
+# Start live preview with web editor
+python -m pymd.cli serve --file my_document.pymd --port 8080
+
+# Render to HTML
+python -m pymd.cli render my_document.pymd -o output.html
+
+# Render to Markdown
+python -m pymd.cli render my_document.pymd -f markdown -o output.md
+```
+</details>
 
 ### Web Editor Features
 
