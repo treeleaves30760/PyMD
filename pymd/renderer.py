@@ -611,18 +611,42 @@ class PyMDRenderer:
             if attrs_str:
                 attrs_str = ' ' + attrs_str
             
-            # Create HTML for video
-            html = f'''
-            <div class="video-container">
-                <video width="{width}" height="{height}"{attrs_str}>
-                    <source src="{video_info['relative_path']}" type="video/mp4">
-                    <source src="{video_info['relative_path']}" type="video/webm">
-                    <source src="{video_info['relative_path']}" type="video/ogg">
-                    Your browser does not support the video tag.
-                </video>
-                {f'<p class="video-caption">{caption}</p>' if caption else ''}
-            </div>
-            '''
+            # Determine the correct MIME type based on file extension
+            _, ext = os.path.splitext(video_info['filename'])
+            ext = ext.lower()
+            
+            if ext == '.gif':
+                # For GIF files, use an img tag instead of video tag since browsers handle animated GIFs as images
+                html = f'''
+                <div class="video-container">
+                    <img src="{video_info['relative_path']}" 
+                         alt="{caption}" 
+                         width="{width}" 
+                         style="height: {height}; max-width: 100%; border-radius: 6px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
+                    {f'<p class="video-caption">{caption}</p>' if caption else ''}
+                </div>
+                '''
+            else:
+                # For actual video files, determine the correct MIME type
+                mime_type = 'video/mp4'  # default
+                if ext == '.webm':
+                    mime_type = 'video/webm'
+                elif ext == '.ogg':
+                    mime_type = 'video/ogg'
+                elif ext == '.mov':
+                    mime_type = 'video/quicktime'
+                elif ext == '.avi':
+                    mime_type = 'video/x-msvideo'
+                
+                html = f'''
+                <div class="video-container">
+                    <video width="{width}" height="{height}"{attrs_str}>
+                        <source src="{video_info['relative_path']}" type="{mime_type}">
+                        Your browser does not support the video tag.
+                    </video>
+                    {f'<p class="video-caption">{caption}</p>' if caption else ''}
+                </div>
+                '''
             
             self.add_element('video', video_info, html)
             return html

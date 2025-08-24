@@ -266,8 +266,19 @@ class PyMDServer:
                 else:
                     base_dir = os.getcwd()
                 videos_dir = os.path.join(base_dir, 'videos')
+                
+                # Debug logging
+                print(f"Serving video (root): {filename} from {videos_dir}")
+                
+                # Check if file exists
+                file_path = os.path.join(videos_dir, filename)
+                if not os.path.exists(file_path):
+                    print(f"Video file not found (root): {file_path}")
+                    return f"Video file not found: {file_path}", 404
+                
                 return send_from_directory(videos_dir, filename)
             except Exception as e:
+                print(f"Error serving video (root) {filename}: {str(e)}")
                 return f"Video not found: {str(e)}", 404
 
         @self.app.route('/images/<path:filename>')
@@ -280,8 +291,19 @@ class PyMDServer:
                 else:
                     base_dir = os.getcwd()
                 images_dir = os.path.join(base_dir, 'images')
+                
+                # Debug logging
+                print(f"Serving image (root): {filename} from {images_dir}")
+                
+                # Check if file exists
+                file_path = os.path.join(images_dir, filename)
+                if not os.path.exists(file_path):
+                    print(f"Image file not found (root): {file_path}")
+                    return f"Image file not found: {file_path}", 404
+                
                 return send_from_directory(images_dir, filename)
             except Exception as e:
+                print(f"Error serving image (root) {filename}: {str(e)}")
                 return f"Image not found: {str(e)}", 404
 
         @self.app.route('/')
