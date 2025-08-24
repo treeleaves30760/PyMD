@@ -25,3 +25,7 @@ publish.sh
 
 # .vscode
 .vscode/
+
+# Rendered files
+videos/
+images/
