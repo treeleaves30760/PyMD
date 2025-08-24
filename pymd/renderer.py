@@ -123,14 +123,14 @@ class PyMDRenderer:
         self.variable_snapshots = {}
         self.last_full_content_hash = None
         self.max_cache_size = 100  # Maximum number of cached results
-        
+
         # Image handling
         self.output_dir = output_dir or os.getcwd()
         self.images_dir = os.path.join(self.output_dir, 'images')
         self.image_counter = 0
         self.captured_images = []  # Store info about captured images
         self._custom_plt = None  # Store custom plt object for reuse
-        
+
         # Video handling
         self.videos_dir = os.path.join(self.output_dir, 'videos')
         self.video_counter = 0
@@ -148,7 +148,7 @@ class PyMDRenderer:
         """Ensure the images directory exists"""
         if not os.path.exists(self.images_dir):
             os.makedirs(self.images_dir, exist_ok=True)
-    
+
     def _ensure_videos_dir(self):
         """Ensure the videos directory exists"""
         if not os.path.exists(self.videos_dir):
@@ -157,23 +157,23 @@ class PyMDRenderer:
     def _save_figure_to_file(self, fig, filename: str = None, caption: str = '') -> Dict[str, str]:
         """Save matplotlib figure to file and return image info"""
         self._ensure_images_dir()
-        
+
         if filename is None:
             self.image_counter += 1
             filename = f"plot_{self.image_counter}_{uuid.uuid4().hex[:8]}.png"
-        
+
         file_path = os.path.join(self.images_dir, filename)
         relative_path = f"images/{filename}"
-        
+
         # Save figure to file
         fig.savefig(file_path, format='png', bbox_inches='tight', dpi=150)
-        
+
         # Also create base64 for fallback
         img_buffer = io.BytesIO()
         fig.savefig(img_buffer, format='png', bbox_inches='tight', dpi=150)
         img_buffer.seek(0)
         img_base64 = base64.b64encode(img_buffer.getvalue()).decode()
-        
+
         image_info = {
             'filename': filename,
             'file_path': file_path,
@@ -181,7 +181,7 @@ class PyMDRenderer:
             'base64': img_base64,
             'caption': caption
         }
-        
+
         self.captured_images.append(image_info)
         return image_info
 
@@ -191,10 +191,11 @@ class PyMDRenderer:
             # Check if image file exists
             if not os.path.exists(image_path):
                 raise FileNotFoundError(f"Image file not found: {image_path}")
-            
+
             # Copy image to images directory and get info
-            image_info = self._save_image_file_to_images_dir(image_path, caption=caption)
-            
+            image_info = self._save_image_file_to_images_dir(
+                image_path, caption=caption)
+
             html = f'''
             <div class="image-container">
                 <img src="{image_info['relative_path']}" 
@@ -204,7 +205,7 @@ class PyMDRenderer:
                 {f'<p class="image-caption">{caption}</p>' if caption else ''}
             </div>
             '''
-            
+
             self.add_element('image', image_info, html)
             return html
 
@@ -216,9 +217,9 @@ class PyMDRenderer:
     def _save_image_file_to_images_dir(self, image_path: str, filename: str = None, caption: str = '') -> Dict[str, str]:
         """Copy image file to images directory and return image info"""
         import shutil
-        
+
         self._ensure_images_dir()
-        
+
         if filename is None:
             # Try to preserve the original filename from the image_path
             original_filename = os.path.basename(image_path)
@@ -238,16 +239,16 @@ class PyMDRenderer:
                 if not ext:
                     ext = '.png'  # default extension
                 filename = f"image_{self.image_counter}_{uuid.uuid4().hex[:8]}{ext}"
-        
+
         file_path = os.path.join(self.images_dir, filename)
         relative_path = f"images/{filename}"
-        
+
         try:
             # Copy image file to images directory
             shutil.copy2(image_path, file_path)
         except Exception as e:
             raise Exception(f"Failed to copy image file: {str(e)}")
-        
+
         # Also create base64 for fallback
         try:
             import base64
@@ -255,7 +256,7 @@ class PyMDRenderer:
                 img_base64 = base64.b64encode(img_file.read()).decode()
         except Exception:
             img_base64 = ''  # If base64 encoding fails, use empty string
-        
+
         image_info = {
             'filename': filename,
             'file_path': file_path,
@@ -264,24 +265,24 @@ class PyMDRenderer:
             'base64': img_base64,
             'caption': caption
         }
-        
+
         self.captured_images.append(image_info)
         return image_info
 
     def _create_custom_plt_show(self):
         """Create a custom plt.show() function that captures and renders plots"""
-        def custom_show(*args, **kwargs):
+        def custom_show(*_args, **_kwargs):
             if not MATPLOTLIB_AVAILABLE:
                 return
-            
+
             # Get current figure
             fig = plt.gcf()
-            
+
             # Check if figure has any content
             if len(fig.get_axes()) > 0:
                 # Save figure to file and get info
                 image_info = self._save_figure_to_file(fig)
-                
+
                 # Create HTML for both file-based and base64 display
                 html = f'''
                 <div class="image-container">
@@ -292,13 +293,13 @@ class PyMDRenderer:
                     {f'<p class="image-caption">{image_info["caption"]}</p>' if image_info["caption"] else ''}
                 </div>
                 '''
-                
+
                 # Add to elements with the image info for matching in markdown generation
                 self.add_element('image', image_info, html)
-                
+
                 # Clear the figure to prevent memory leaks
                 plt.clf()
-        
+
         return custom_show
 
     def _parse_input_mocks(self, code: str) -> Dict[str, str]:
@@ -324,7 +325,7 @@ class PyMDRenderer:
         mock_values = list(input_mocks.values())
         call_count = [0]  # Use list to make it mutable in closure
 
-        def mock_input(prompt=''):
+        def mock_input(_prompt=''):
             value = mock_values[call_count[0]]
             call_count[0] += 1
             # Don't print anything - just return the mock value silently
@@ -337,7 +338,7 @@ class PyMDRenderer:
         # Create a combined hash of code content and relevant variables
         content = code + str(sorted(variables_snapshot.items()))
         return hashlib.md5(content.encode('utf-8')).hexdigest()
-    
+
     def _get_variable_snapshot(self) -> Dict[str, Any]:
         """Get a snapshot of current variables for caching"""
         # Only include serializable variables for hashing
@@ -372,14 +373,14 @@ class PyMDRenderer:
         if cache_key is None:
             variables_snapshot = self._get_variable_snapshot()
             cache_key = self._get_code_hash(code, variables_snapshot)
-        
+
         # Check cache first
         if cache_key in self.code_cache:
             cached_result = self.code_cache[cache_key]
             # Restore variables from cache
             self.variables.update(cached_result['variables'])
             return cached_result.copy()
-        
+
         # Capture stdout and stderr
         old_stdout = sys.stdout
         old_stderr = sys.stderr
@@ -399,7 +400,7 @@ class PyMDRenderer:
             # This allows users to save files directly to these directories
             self._ensure_images_dir()
             self._ensure_videos_dir()
-            
+
             # Parse input mock values
             input_mocks = self._parse_input_mocks(code)
 
@@ -411,7 +412,7 @@ class PyMDRenderer:
                 'pd': pd,
                 **self.variables
             }
-            
+
             # Override plt.show with our custom function if matplotlib is available
             if MATPLOTLIB_AVAILABLE and plt is not None:
                 if self._custom_plt is None:
@@ -452,7 +453,7 @@ class PyMDRenderer:
 
             # Update variables but preserve the custom_plt reference for consistent image counter
             updated_vars = {k: v for k, v in exec_globals.items()
-                          if not k.startswith('__') and k not in ['pymd', 'pd', 'input']}
+                            if not k.startswith('__') and k not in ['pymd', 'pd', 'input']}
             # Don't update 'plt' to preserve our custom wrapper
             if 'plt' in updated_vars:
                 del updated_vars['plt']
@@ -460,17 +461,17 @@ class PyMDRenderer:
 
             result['output'] = stdout_capture.getvalue()
             result['variables'] = self.variables.copy()
-            
+
             # Cache the successful result
             self.code_cache[cache_key] = result.copy()
             self._manage_cache_size()
 
-        except Exception as e:
+        except Exception:
             result['success'] = False
             result['error'] = traceback.format_exc()
             result['output'] = stdout_capture.getvalue()
             result['variables'] = self.variables.copy()
-            
+
             # Cache the error result too to avoid re-executing failing code
             self.code_cache[cache_key] = result.copy()
             self._manage_cache_size()
@@ -523,19 +524,19 @@ class PyMDRenderer:
     def _save_video_to_file(self, video_path: str, filename: str = None, caption: str = '') -> Dict[str, str]:
         """Copy video file to videos directory and return video info"""
         import shutil
-        
+
         self._ensure_videos_dir()
-        
+
         # Check if the video_path is already in the videos directory
         abs_video_path = os.path.abspath(video_path)
         abs_videos_dir = os.path.abspath(self.videos_dir)
-        
+
         if abs_video_path.startswith(abs_videos_dir + os.sep):
             # Video is already in the videos directory, no need to copy
             filename = os.path.basename(video_path)
             file_path = abs_video_path
             relative_path = f"videos/{filename}"
-            
+
             video_info = {
                 'filename': filename,
                 'file_path': file_path,
@@ -543,10 +544,10 @@ class PyMDRenderer:
                 'original_path': video_path,
                 'caption': caption
             }
-            
+
             self.captured_videos.append(video_info)
             return video_info
-        
+
         if filename is None:
             # Try to preserve the original filename from the video_path
             original_filename = os.path.basename(video_path)
@@ -567,16 +568,16 @@ class PyMDRenderer:
                 if not ext:
                     ext = '.mp4'  # default extension
                 filename = f"video_{self.video_counter}_{uuid.uuid4().hex[:8]}{ext}"
-        
+
         file_path = os.path.join(self.videos_dir, filename)
         relative_path = f"videos/{filename}"
-        
+
         try:
             # Copy video file to videos directory
             shutil.copy2(video_path, file_path)
         except Exception as e:
             raise Exception(f"Failed to copy video file: {str(e)}")
-        
+
         video_info = {
             'filename': filename,
             'file_path': file_path,
@@ -584,7 +585,7 @@ class PyMDRenderer:
             'original_path': video_path,
             'caption': caption
         }
-        
+
         self.captured_videos.append(video_info)
         return video_info
 
@@ -594,10 +595,10 @@ class PyMDRenderer:
             # Check if video file exists
             if not os.path.exists(video_path):
                 raise FileNotFoundError(f"Video file not found: {video_path}")
-            
+
             # Save video to videos directory and get info
             video_info = self._save_video_to_file(video_path, caption=caption)
-            
+
             # Build video attributes
             video_attrs = []
             if controls:
@@ -606,15 +607,15 @@ class PyMDRenderer:
                 video_attrs.append('autoplay')
             if loop:
                 video_attrs.append('loop')
-            
+
             attrs_str = ' '.join(video_attrs)
             if attrs_str:
                 attrs_str = ' ' + attrs_str
-            
+
             # Determine the correct MIME type based on file extension
             _, ext = os.path.splitext(video_info['filename'])
             ext = ext.lower()
-            
+
             if ext == '.gif':
                 # For GIF files, use an img tag instead of video tag since browsers handle animated GIFs as images
                 html = f'''
@@ -637,7 +638,7 @@ class PyMDRenderer:
                     mime_type = 'video/quicktime'
                 elif ext == '.avi':
                     mime_type = 'video/x-msvideo'
-                
+
                 html = f'''
                 <div class="video-container">
                     <video width="{width}" height="{height}"{attrs_str}>
@@ -647,7 +648,7 @@ class PyMDRenderer:
                     {f'<p class="video-caption">{caption}</p>' if caption else ''}
                 </div>
                 '''
-            
+
             self.add_element('video', video_info, html)
             return html
 
@@ -660,12 +661,12 @@ class PyMDRenderer:
         """Process **bold** syntax in content text"""
         # Replace **text** with <strong>text</strong>
         return re.sub(r'\*\*(.*?)\*\*', r'<strong>\1</strong>', text)
-    
+
     def _process_markdown_table(self, table_lines: list) -> str:
         """Process markdown table syntax into HTML"""
         if len(table_lines) < 2:
             return None
-        
+
         # Parse header row
         header_line = table_lines[0].strip()
         if not header_line.startswith('|') or not header_line.endswith('|'):
@@ -673,12 +674,13 @@ class PyMDRenderer:
             header_cells = [cell.strip() for cell in header_line.split('|')]
         else:
             # Remove outer pipes and split
-            header_cells = [cell.strip() for cell in header_line[1:-1].split('|')]
-        
+            header_cells = [cell.strip()
+                            for cell in header_line[1:-1].split('|')]
+
         # Check if second line is separator (like |---|---|)
         separator_line = table_lines[1].strip()
         is_separator = re.match(r'^\|?[\s\-\|:]+\|?$', separator_line)
-        
+
         # Extract alignment info from separator if it exists
         alignments = []
         if is_separator:
@@ -686,7 +688,7 @@ class PyMDRenderer:
                 sep_cells = separator_line.split('|')
             else:
                 sep_cells = separator_line[1:-1].split('|')
-            
+
             for cell in sep_cells:
                 cell = cell.strip()
                 if cell.startswith(':') and cell.endswith(':'):
@@ -695,17 +697,17 @@ class PyMDRenderer:
                     alignments.append('right')
                 else:
                     alignments.append('left')
-            
+
             # Data rows start from index 2
             data_start = 2
         else:
             # No separator, all data including second row
             alignments = ['left'] * len(header_cells)
             data_start = 1
-        
+
         # Build HTML table
         html = '<table class="pymd-table">\n'
-        
+
         # Header
         html += '  <thead>\n    <tr>\n'
         for i, header in enumerate(header_cells):
@@ -714,7 +716,7 @@ class PyMDRenderer:
             processed_header = self._process_bold_text_in_content(header)
             html += f'      <th{style}>{processed_header}</th>\n'
         html += '    </tr>\n  </thead>\n'
-        
+
         # Body
         if data_start < len(table_lines):
             html += '  <tbody>\n'
@@ -722,13 +724,14 @@ class PyMDRenderer:
                 row_line = row_line.strip()
                 if not row_line:
                     continue
-                
+
                 # Parse data row
                 if not row_line.startswith('|') or not row_line.endswith('|'):
                     data_cells = [cell.strip() for cell in row_line.split('|')]
                 else:
-                    data_cells = [cell.strip() for cell in row_line[1:-1].split('|')]
-                
+                    data_cells = [cell.strip()
+                                  for cell in row_line[1:-1].split('|')]
+
                 html += '    <tr>\n'
                 for i, cell in enumerate(data_cells):
                     align = alignments[i] if i < len(alignments) else 'left'
@@ -737,21 +740,21 @@ class PyMDRenderer:
                     html += f'      <td{style}>{processed_cell}</td>\n'
                 html += '    </tr>\n'
             html += '  </tbody>\n'
-        
+
         html += '</table>'
         return html
-    
+
     def _process_print_output_as_markdown(self, output: str):
         """Process print output lines as markdown content"""
         lines = output.split('\n')
         i = 0
-        
+
         while i < len(lines):
             line = lines[i].strip()
             if not line:
                 i += 1
                 continue
-                
+
             # Check if line is a markdown header
             if line.startswith('#'):
                 level = 0
@@ -760,20 +763,21 @@ class PyMDRenderer:
                         level += 1
                     else:
                         break
-                
+
                 if level > 0 and level <= 6 and line[level:].strip():
                     header_text = line[level:].strip()
-                    processed_header = self._process_bold_text_in_content(header_text)
+                    processed_header = self._process_bold_text_in_content(
+                        header_text)
                     header_html = f'<h{level}>{processed_header}</h{level}>'
                     self.add_element(f'h{level}', header_text, header_html)
                     i += 1
                     continue
-            
+
             # Check if line is a markdown table
             if '|' in line and line.count('|') >= 2:
                 table_lines = [line]
                 i += 1
-                
+
                 # Collect potential table lines
                 while i < len(lines):
                     next_line = lines[i].strip()
@@ -785,38 +789,41 @@ class PyMDRenderer:
                         continue
                     else:
                         break
-                
+
                 # Process table if we have at least 2 rows (header + separator/data)
                 if len(table_lines) >= 2:
                     table_html = self._process_markdown_table(table_lines)
                     if table_html:
                         self.add_element('table', table_lines, table_html)
                         continue
-                
+
                 # If not a valid table, fall back to regular text processing
                 for table_line in table_lines:
-                    processed_text = self._process_bold_text_in_content(table_line)
+                    processed_text = self._process_bold_text_in_content(
+                        table_line)
                     text_html = f'<p>{processed_text}</p>'
                     self.add_element('text', table_line, text_html)
                 continue
-            
+
             # Check if line is a list item
             if line.startswith('-') or re.match(r'^\d+\.\s+', line):
                 if line.startswith('-'):
                     item_text = line[1:].strip()
-                    processed_item = self._process_bold_text_in_content(item_text)
+                    processed_item = self._process_bold_text_in_content(
+                        item_text)
                     ul_html = f'<ul><li>{processed_item}</li></ul>'
                     self.add_element('ul', [item_text], ul_html)
                 else:
                     match = re.match(r'^\d+\.\s+(.*)$', line)
                     if match:
                         item_text = match.group(1).strip()
-                        processed_item = self._process_bold_text_in_content(item_text)
+                        processed_item = self._process_bold_text_in_content(
+                            item_text)
                         ol_html = f'<ol><li>{processed_item}</li></ol>'
                         self.add_element('ol', [item_text], ol_html)
                 i += 1
                 continue
-            
+
             # Regular text - treat as paragraph
             processed_text = self._process_bold_text_in_content(line)
             text_html = f'<p>{processed_text}</p>'
@@ -881,27 +888,51 @@ class PyMDRenderer:
             self.add_element('table', f'Error: {str(e)}', error_html)
             return error_html
 
+    def _is_header_content(self, content: str) -> bool:
+        """Determine if content should be treated as a header vs regular text"""
+        # Simple heuristic: treat as header if it's a single word or short phrase without punctuation
+        content = content.strip()
+        
+        # Not a header if it's a list item
+        if content.startswith('-') or re.match(r'^\d+\.\s+', content):
+            return False
+        
+        # Not a header if it contains sentence-ending punctuation
+        if content.endswith('.') or content.endswith('!') or content.endswith('?'):
+            return False
+        
+        # Not a header if it's too long (more than 8 words)
+        words = content.split()
+        if len(words) > 8:
+            return False
+            
+        # Not a header if it starts with lowercase (likely a sentence)
+        if content and content[0].islower():
+            return False
+            
+        return True
+
     def _get_content_hash(self, content: str) -> str:
         """Generate hash for entire content"""
         return hashlib.md5(content.encode('utf-8')).hexdigest()
-    
+
     def _extract_code_blocks(self, content: str) -> Dict[int, str]:
         """Extract all code blocks with their positions for change detection"""
         code_blocks = {}
         lines = content.split('\n')
         i = 0
         block_index = 0
-        
+
         while i < len(lines):
             line = lines[i]
             stripped_line = line.strip()
-            
+
             # Handle code blocks with ```
             if stripped_line == '```':
                 i += 1  # Skip the opening ```
                 code_lines = []
                 start_line = i
-                
+
                 # Collect all lines until closing ```
                 while i < len(lines):
                     current_line = lines[i]
@@ -910,7 +941,7 @@ class PyMDRenderer:
                         break
                     code_lines.append(current_line)
                     i += 1
-                
+
                 if code_lines:
                     code_block = '\n'.join(code_lines)
                     code_blocks[block_index] = {
@@ -920,12 +951,12 @@ class PyMDRenderer:
                     }
                     block_index += 1
                 continue
-            
+
             # Handle display-only code blocks with ````
             elif stripped_line == '````':
                 i += 1  # Skip the opening ````
                 code_lines = []
-                
+
                 # Collect all lines until closing ````
                 while i < len(lines):
                     current_line = lines[i]
@@ -934,7 +965,7 @@ class PyMDRenderer:
                         break
                     code_lines.append(current_line)
                     i += 1
-                
+
                 if code_lines:
                     code_block = '\n'.join(code_lines)
                     code_blocks[block_index] = {
@@ -943,27 +974,27 @@ class PyMDRenderer:
                     }
                     block_index += 1
                 continue
-            
+
             i += 1
-        
+
         return code_blocks
 
     def parse_and_render(self, pymd_content: str) -> str:
         """Parse PyMD content with ``` blocks for code and # prefixed markdown content"""
         # Check if content has changed significantly
         content_hash = self._get_content_hash(pymd_content)
-        
+
         # For incremental updates, we need to detect what changed
         if self.last_full_content_hash and self.last_full_content_hash == content_hash:
             # Content hasn't changed, return cached HTML
             return self.generate_html()
-        
+
         # Content changed, need to re-parse
         self.last_full_content_hash = content_hash
-        
+
         # Extract code blocks for change detection (could be used for future optimizations)
         # current_code_blocks = self._extract_code_blocks(pymd_content)
-        
+
         # Clear elements for fresh render
         self.elements = []
 
@@ -989,13 +1020,13 @@ class PyMDRenderer:
                 while i < len(lines):
                     current_line = lines[i]
                     current_stripped = current_line.strip()
-                    
+
                     # Check for closing ``` (only non-prefixed)
                     if current_stripped == '```':
                         # Found closing ```, stop collecting
                         i += 1  # Skip the closing ```
                         break
-                    
+
                     # Code inside ``` blocks should be used as-is
                     code_lines.append(current_line)
                     i += 1
@@ -1007,17 +1038,19 @@ class PyMDRenderer:
                         # Create cache key for this specific code block
                         variables_snapshot = self._get_variable_snapshot()
                         cache_key = f"exec_{code_block_index}_{self._get_code_hash(code_block, variables_snapshot)}"
-                        
+
                         result = self.execute_code(code_block, cache_key)
                         if result['success']:
                             if result['output'].strip():
                                 # Process print output as markdown
-                                self._process_print_output_as_markdown(result['output'].strip())
+                                self._process_print_output_as_markdown(
+                                    result['output'].strip())
                         else:
                             # Display execution error
                             error_html = f'<pre class="error">Code execution error: {result["error"]}</pre>'
-                            self.add_element('error', result['error'], error_html)
-                        
+                            self.add_element(
+                                'error', result['error'], error_html)
+
                         code_block_index += 1
                     except Exception as e:
                         error_html = f'<pre class="error">Code execution error: {str(e)}</pre>'
@@ -1034,13 +1067,13 @@ class PyMDRenderer:
                 while i < len(lines):
                     current_line = lines[i]
                     current_stripped = current_line.strip()
-                    
+
                     # Check for closing ```` (only non-prefixed)
                     if current_stripped == '````':
                         # Found closing ````, stop collecting
                         i += 1  # Skip the closing ````
                         break
-                    
+
                     # Code inside ```` blocks should be used as-is
                     code_lines.append(current_line)
                     i += 1
@@ -1049,24 +1082,27 @@ class PyMDRenderer:
                 if code_lines:
                     code_block = '\n'.join(code_lines)
                     cache_key = f"display_{code_block_index}_{hashlib.md5(code_block.encode()).hexdigest()}"
-                    
+
                     # Check if we have cached HTML for this display block
                     if cache_key in self.code_cache:
                         cached_html = self.code_cache[cache_key]['html']
-                        self.add_element('display_code', code_block, cached_html)
+                        self.add_element(
+                            'display_code', code_block, cached_html)
                     else:
                         # Process // comments in display blocks
-                        processed_code = self._process_display_comments(code_block)
+                        processed_code = self._process_display_comments(
+                            code_block)
                         display_html = f'<pre class="display-code">{processed_code}</pre>'
-                        self.add_element('display_code', code_block, display_html)
+                        self.add_element(
+                            'display_code', code_block, display_html)
                         # Cache the display HTML
                         self.code_cache[cache_key] = {'html': display_html}
-                    
+
                     code_block_index += 1
                 continue
 
-            # Skip // comments (but not markdown lines)
-            if stripped_line.startswith('//'):
+            # Skip // comments (both standalone and prefixed)
+            if stripped_line.startswith('//') or stripped_line.startswith('# //'):
                 i += 1
                 continue
 
@@ -1075,28 +1111,28 @@ class PyMDRenderer:
             if stripped_line.startswith('#'):
                 # Extract the markdown content (remove leading #)
                 markdown_content = stripped_line[1:].strip()
-                
+
                 # Check if this is a code block marker inside markdown
                 if markdown_content == '```':
                     # Start of code block within markdown
                     i += 1  # Skip the # ``` line
                     code_lines = []
-                    
+
                     # Collect code until # ``` closing marker
                     while i < len(lines):
                         current_line = lines[i]
                         current_stripped = current_line.strip()
-                        
-                        # Check for closing # ``` 
+
+                        # Check for closing # ```
                         if current_stripped.startswith('#') and current_stripped[1:].strip() == '```':
                             # Found closing # ```, stop collecting
                             i += 1  # Skip the closing # ```
                             break
-                        
+
                         # Regular code line (not prefixed with #)
                         code_lines.append(current_line)
                         i += 1
-                    
+
                     # Execute the collected code block
                     if code_lines:
                         code_block = '\n'.join(code_lines)
@@ -1104,93 +1140,110 @@ class PyMDRenderer:
                             # Create cache key for this specific code block
                             variables_snapshot = self._get_variable_snapshot()
                             cache_key = f"exec_{code_block_index}_{self._get_code_hash(code_block, variables_snapshot)}"
-                            
+
                             result = self.execute_code(code_block, cache_key)
                             if result['success']:
                                 if result['output'].strip():
                                     # Process print output as markdown
-                                    self._process_print_output_as_markdown(result['output'].strip())
+                                    self._process_print_output_as_markdown(
+                                        result['output'].strip())
                             else:
                                 # Display execution error
                                 error_html = f'<pre class="error">Code execution error: {result["error"]}</pre>'
-                                self.add_element('error', result['error'], error_html)
-                            
+                                self.add_element(
+                                    'error', result['error'], error_html)
+
                             code_block_index += 1
                         except Exception as e:
                             error_html = f'<pre class="error">Code execution error: {str(e)}</pre>'
                             self.add_element('error', str(e), error_html)
                             code_block_index += 1
                     continue
-                
+
                 # Check if this is a display-only code block marker
                 elif markdown_content == '````':
                     # Start of display-only code block within markdown
                     i += 1  # Skip the # ```` line
                     code_lines = []
-                    
+
                     # Collect code until # ```` closing marker
                     while i < len(lines):
                         current_line = lines[i]
                         current_stripped = current_line.strip()
-                        
+
                         # Check for closing # ````
                         if current_stripped.startswith('#') and current_stripped[1:].strip() == '````':
                             # Found closing # ````, stop collecting
                             i += 1  # Skip the closing # ````
                             break
-                        
+
                         # Regular code line (preserve # prefixes for display)
                         code_lines.append(current_line)
                         i += 1
-                    
+
                     # Display the code block without execution
                     if code_lines:
                         code_block = '\n'.join(code_lines)
                         cache_key = f"display_{code_block_index}_{hashlib.md5(code_block.encode()).hexdigest()}"
-                        
+
                         # Check if we have cached HTML for this display block
                         if cache_key in self.code_cache:
                             cached_html = self.code_cache[cache_key]['html']
-                            self.add_element('display_code', code_block, cached_html)
+                            self.add_element(
+                                'display_code', code_block, cached_html)
                         else:
                             # Process // comments in display blocks
-                            processed_code = self._process_display_comments(code_block)
+                            processed_code = self._process_display_comments(
+                                code_block)
                             display_html = f'<pre class="display-code">{processed_code}</pre>'
-                            self.add_element('display_code', code_block, display_html)
+                            self.add_element(
+                                'display_code', code_block, display_html)
                             # Cache the display HTML
                             self.code_cache[cache_key] = {'html': display_html}
-                        
+
                         code_block_index += 1
                     continue
-                
-                # Determine if this is a header by counting # characters
-                elif markdown_content.startswith('#'):
-                    # This is a header (##, ###, etc.)
+
+                # Check if this is a header (## or more #s) but not escaped (# #)
+                elif markdown_content.startswith('#') and not stripped_line.startswith('# # '):
+                    # This is a multi-level header (##, ###, etc.)
                     level = 1  # Start with level 1 for the first #
                     header_content = markdown_content[1:]  # Remove the first #
                     while header_content.startswith('#'):
                         level += 1
                         header_content = header_content[1:]
-                    
+
                     if level <= 6 and header_content.strip():
                         header_text = header_content.strip()
-                        processed_header = self._process_bold_text_in_content(header_text)
+                        processed_header = self._process_bold_text_in_content(
+                            header_text)
                         header_html = f'<h{level}>{processed_header}</h{level}>'
                         self.add_element(f'h{level}', header_text, header_html)
                         i += 1
                         continue
-                
+
+                # Check if this is a single-level header (simple case) but not escaped (# #)
+                elif markdown_content and not stripped_line.startswith('# # ') and self._is_header_content(markdown_content):
+                    header_text = markdown_content.strip()
+                    processed_header = self._process_bold_text_in_content(
+                        header_text)
+                    header_html = f'<h1>{processed_header}</h1>'
+                    self.add_element('h1', header_text, header_html)
+                    i += 1
+                    continue
+
+
                 # Check if this is a markdown table
                 elif '|' in markdown_content and markdown_content.count('|') >= 2:
                     # Collect table lines (prefixed with #)
                     table_lines = [markdown_content]
                     original_i = i
                     i += 1
-                    
+
                     while i < len(lines):
                         current_line = lines[i]
                         current_stripped = current_line.strip()
-                        
+
                         if current_stripped.startswith('#'):
                             current_content = current_stripped[1:].strip()
                             if '|' in current_content and current_content.count('|') >= 2:
@@ -1205,17 +1258,17 @@ class PyMDRenderer:
                                 break
                         else:
                             break
-                    
+
                     # Process table if we have valid table data
                     if len(table_lines) >= 2:
                         table_html = self._process_markdown_table(table_lines)
                         if table_html:
                             self.add_element('table', table_lines, table_html)
                             continue
-                    
+
                     # If not valid table, restore position and continue to next check
                     i = original_i
-                
+
                 # Check if this is a list item
                 elif markdown_content.startswith('-') or re.match(r'^\d+\.\s+', markdown_content):
                     if markdown_content.startswith('-'):
@@ -1224,7 +1277,7 @@ class PyMDRenderer:
                         while i < len(lines):
                             current_line = lines[i]
                             current_stripped = current_line.strip()
-                            
+
                             if current_stripped.startswith('#'):
                                 current_content = current_stripped[1:].strip()
                                 if current_content.startswith('-'):
@@ -1235,23 +1288,27 @@ class PyMDRenderer:
                                     break
                             else:
                                 break
-                        
+
                         if list_items:
-                            processed_items = [self._process_bold_text_in_content(item) for item in list_items]
-                            ul_html = '<ul>' + ''.join(f'<li>{item}</li>' for item in processed_items) + '</ul>'
+                            processed_items = [self._process_bold_text_in_content(
+                                item) for item in list_items]
+                            ul_html = '<ul>' + \
+                                ''.join(
+                                    f'<li>{item}</li>' for item in processed_items) + '</ul>'
                             self.add_element('ul', list_items, ul_html)
                         continue
-                    
+
                     else:
                         # Handle ordered lists
                         list_items = []
                         while i < len(lines):
                             current_line = lines[i]
                             current_stripped = current_line.strip()
-                            
+
                             if current_stripped.startswith('#'):
                                 current_content = current_stripped[1:].strip()
-                                match = re.match(r'^\d+\.\s+(.*)$', current_content)
+                                match = re.match(
+                                    r'^\d+\.\s+(.*)$', current_content)
                                 if match:
                                     item_text = match.group(1).strip()
                                     list_items.append(item_text)
@@ -1260,24 +1317,45 @@ class PyMDRenderer:
                                     break
                             else:
                                 break
-                        
+
                         if list_items:
-                            processed_items = [self._process_bold_text_in_content(item) for item in list_items]
-                            ol_html = '<ol>' + ''.join(f'<li>{item}</li>' for item in processed_items) + '</ol>'
+                            processed_items = [self._process_bold_text_in_content(
+                                item) for item in list_items]
+                            ol_html = '<ol>' + \
+                                ''.join(
+                                    f'<li>{item}</li>' for item in processed_items) + '</ol>'
                             self.add_element('ol', list_items, ol_html)
                         continue
-                
+
                 # Handle regular markdown text (prefixed with #)
                 if markdown_content:
-                    processed_text = self._process_bold_text_in_content(markdown_content)
-                    text_html = f'<p>{processed_text}</p>'
-                    self.add_element('text', markdown_content, text_html)
+                    # Special handling for escaped # (when line starts with # # with space)
+                    if stripped_line.startswith('# # '):
+                        # Remove the leading # to get the actual text content
+                        actual_content = markdown_content[1:].strip()
+                        # Check if the content should still be a header
+                        if self._is_header_content(actual_content):
+                            processed_header = self._process_bold_text_in_content(
+                                actual_content)
+                            header_html = f'<h1>{processed_header}</h1>'
+                            self.add_element('h1', actual_content, header_html)
+                        else:
+                            processed_text = self._process_bold_text_in_content(
+                                actual_content)
+                            text_html = f'<p>{processed_text}</p>'
+                            self.add_element('text', actual_content, text_html)
+                    else:
+                        processed_text = self._process_bold_text_in_content(
+                            markdown_content)
+                        text_html = f'<p>{processed_text}</p>'
+                        self.add_element('text', markdown_content, text_html)
                 i += 1
                 continue
 
             # Handle legacy markdown syntax (headers, lists, text without # prefix)
             # This maintains backward compatibility
-            if stripped_line.startswith('##'):  # Headers without # prefix (legacy)
+            # Headers without # prefix (legacy)
+            if stripped_line.startswith('##'):
                 level = 0
                 for char in stripped_line:
                     if char == '#':
@@ -1299,12 +1377,12 @@ class PyMDRenderer:
                 table_lines = [stripped_line]
                 original_i = i
                 i += 1
-                
+
                 # Collect potential table lines
                 while i < len(lines):
                     current_line = lines[i]
                     current_stripped = current_line.strip()
-                    
+
                     if '|' in current_stripped and current_stripped.count('|') >= 2:
                         table_lines.append(current_stripped)
                         i += 1
@@ -1314,14 +1392,14 @@ class PyMDRenderer:
                         continue
                     else:
                         break
-                
+
                 # Process table if we have valid table data
                 if len(table_lines) >= 2:
                     table_html = self._process_markdown_table(table_lines)
                     if table_html:
                         self.add_element('table', table_lines, table_html)
                         continue
-                
+
                 # If not valid table, restore position and continue
                 i = original_i
 
@@ -1378,7 +1456,8 @@ class PyMDRenderer:
 
             # Handle plain text (legacy - without # prefix)
             if stripped_line and not stripped_line.startswith('#'):
-                processed_text = self._process_bold_text_in_content(stripped_line)
+                processed_text = self._process_bold_text_in_content(
+                    stripped_line)
                 text_html = f'<p>{processed_text}</p>'
                 self.add_element('text', stripped_line, text_html)
             i += 1
@@ -1649,7 +1728,7 @@ class PyMDRenderer:
             if stripped_line == '```':
                 markdown_lines.append('```python')
                 i += 1  # Skip the opening ```
-                
+
                 # Collect all lines until closing ```
                 while i < len(lines):
                     current_line = lines[i]
@@ -1665,7 +1744,7 @@ class PyMDRenderer:
             if stripped_line == '````':
                 markdown_lines.append('```python')
                 i += 1  # Skip the opening ````
-                
+
                 # Collect all lines until closing ````
                 while i < len(lines):
                     current_line = lines[i]
@@ -1677,8 +1756,8 @@ class PyMDRenderer:
                     i += 1
                 continue
 
-            # Skip // comments
-            if stripped_line.startswith('//'):
+            # Skip // comments (both standalone and prefixed)
+            if stripped_line.startswith('//') or stripped_line.startswith('# //'):
                 i += 1
                 continue
 
@@ -1718,11 +1797,11 @@ class PyMDRenderer:
     def generate_markdown(self) -> str:
         """Generate markdown from rendered elements (including captured images)"""
         markdown_parts = []
-        
+
         for element in self.elements:
             element_type = element['type']
             content = element['content']
-            
+
             if element_type.startswith('h'):
                 # Headers
                 level = int(element_type[1])
@@ -1730,14 +1809,16 @@ class PyMDRenderer:
                 markdown_parts.append('')
             elif element_type == 'text':
                 # Regular text (process bold formatting)
-                text = content.replace('<strong>', '**').replace('</strong>', '**')
+                text = content.replace(
+                    '<strong>', '**').replace('</strong>', '**')
                 markdown_parts.append(text)
                 markdown_parts.append('')
             elif element_type == 'image':
                 # Images - content now contains the image_info dict
                 if isinstance(content, dict) and 'relative_path' in content:
                     # Use the image info directly
-                    markdown_parts.append(f"![{content['caption']}]({content['relative_path']})")
+                    markdown_parts.append(
+                        f"![{content['caption']}]({content['relative_path']})")
                 else:
                     # Fallback for legacy images or text-based images
                     markdown_parts.append(f"![{content}]({content})")
@@ -1747,8 +1828,10 @@ class PyMDRenderer:
                 if isinstance(content, dict) and 'relative_path' in content:
                     # For markdown, we can use HTML video tags since most markdown processors support HTML
                     markdown_parts.append(f'<video controls width="100%">')
-                    markdown_parts.append(f'  <source src="{content["relative_path"]}" type="video/mp4">')
-                    markdown_parts.append(f'  Your browser does not support the video tag.')
+                    markdown_parts.append(
+                        f'  <source src="{content["relative_path"]}" type="video/mp4">')
+                    markdown_parts.append(
+                        f'  Your browser does not support the video tag.')
                     markdown_parts.append(f'</video>')
                     if content['caption']:
                         markdown_parts.append(f"*{content['caption']}*")
@@ -1759,13 +1842,15 @@ class PyMDRenderer:
             elif element_type == 'ul':
                 # Unordered lists
                 for item in content:
-                    item_text = item.replace('<strong>', '**').replace('</strong>', '**')
+                    item_text = item.replace(
+                        '<strong>', '**').replace('</strong>', '**')
                     markdown_parts.append(f"- {item_text}")
                 markdown_parts.append('')
             elif element_type == 'ol':
                 # Ordered lists
                 for i, item in enumerate(content, 1):
-                    item_text = item.replace('<strong>', '**').replace('</strong>', '**')
+                    item_text = item.replace(
+                        '<strong>', '**').replace('</strong>', '**')
                     markdown_parts.append(f"{i}. {item_text}")
                 markdown_parts.append('')
             elif element_type == 'table':
@@ -1793,7 +1878,7 @@ class PyMDRenderer:
                 markdown_parts.append(content)
                 markdown_parts.append("```")
                 markdown_parts.append('')
-        
+
         return '\n'.join(markdown_parts).strip()
 
     def render_file(self, file_path: str, output_path: str = None) -> str:

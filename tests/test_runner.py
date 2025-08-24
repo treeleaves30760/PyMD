@@ -13,10 +13,10 @@ parent_dir = Path(__file__).parent.parent
 sys.path.insert(0, str(parent_dir))
 
 # Import test modules
-from test_basic_functionality import run_basic_tests
-from test_code_execution import run_code_execution_tests
-from test_new_syntax import run_new_syntax_tests
-from test_styling import run_styling_tests
+from tests.test_basic_functionality import run_basic_tests
+from tests.test_code_execution import run_code_execution_tests
+from tests.test_new_syntax import run_new_syntax_tests
+from tests.test_styling import run_styling_tests
 
 
 def run_all_tests():

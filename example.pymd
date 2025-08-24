@@ -140,6 +140,8 @@ plt.show()
 #
 # ## Video Support
 #
+# // Cool!
+#
 # PyMD now supports video rendering with the new `pymd.video()` function:
 #
 # ```
@@ -292,6 +294,7 @@ print(
 #
 # // This is a comment - it won't appear in the rendered output
 # // Perfect for leaving notes during development!
+#
 #
 #
 #

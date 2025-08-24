@@ -4,7 +4,12 @@ Test the new ``` syntax for separating markdown and code content
 """
 
 import unittest
-from conftest import test_utils
+import sys
+from pathlib import Path
+
+# Add project root to path
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from tests.conftest import test_utils
 
 
 class TestNewSyntax(unittest.TestCase):
@@ -17,28 +22,27 @@ class TestNewSyntax(unittest.TestCase):
     def test_mixed_content_structure(self):
         """Test mixing markdown content with code blocks"""
         content = """
-# Hello
-
-1. Good world
-2. Split
-
-- This is the first
-
-```
+# # Hello
+# 
+# 1. Good world
+# 2. Split
+# 
+# - This is the first
+# 
+# ```
 A = 10
 B = 20
 
 for i in range(3):
     print(B)
-```
-
-# Good
-
-```
+# ```
+# 
+# # Good
+# 
+# ```
 print(A)
-```
-
-More text here.
+# ```
+# More text here.
 """
         html = self.renderer.parse_and_render(content)
         output_file = test_utils.save_test_output(html, "test_mixed_content")
@@ -50,9 +54,9 @@ More text here.
         test_utils.assert_contains(html, '<ul><li>This is the first</li>')
         test_utils.assert_contains(html, '<p>More text here.</p>')
 
-        # Check code execution
-        test_utils.assert_contains(html, '20\n20\n20')  # Loop output
-        test_utils.assert_contains(html, '10')  # Variable A from second block
+        # Check code execution (now rendered as separate paragraphs)
+        test_utils.assert_contains(html, '<p>20</p>')  # Loop output (multiple instances)
+        test_utils.assert_contains(html, '<p>10</p>')  # Variable A from second block
 
         print(
             f"✅ Mixed content structure test passed - output saved to {output_file}")
@@ -60,21 +64,21 @@ More text here.
     def test_code_block_boundaries(self):
         """Test proper parsing of ``` boundaries"""
         content = """
-Text before code.
-
-```
+# Text before code.
+#
+# ```
 x = "inside code block"
 print(x)
-```
-
-Text between code blocks.
-
-```
+# ```
+#
+# # Text between code blocks.
+#
+# ```
 y = "second code block"
 print(y)
-```
-
-Text after code.
+# ```
+#
+# # Text after code.
 """
         html = self.renderer.parse_and_render(content)
         output_file = test_utils.save_test_output(html, "test_code_boundaries")
@@ -91,16 +95,16 @@ Text after code.
     def test_empty_code_blocks(self):
         """Test handling of empty code blocks"""
         content = """
-# Test Empty Blocks
-
-```
-```
-
-Text after empty block.
-
-```
+# # Test Empty Blocks
+#
+# ```
+# ```
+# 
+# Text after empty block.
+# 
+# ```
 print("Not empty")
-```
+# ```
 """
         html = self.renderer.parse_and_render(content)
         output_file = test_utils.save_test_output(html, "test_empty_blocks")
@@ -115,9 +119,9 @@ print("Not empty")
     def test_nested_strings_in_code(self):
         """Test code blocks with complex nested strings"""
         content = """
-# Nested Strings Test
-
-```
+# # Nested Strings Test
+#
+# ```
 code_sample = '''
 def example():
     "This is a docstring"
@@ -126,7 +130,7 @@ def example():
 
 print("Code sample defined")
 pymd.code(code_sample, "python")
-```
+# ```
 """
         html = self.renderer.parse_and_render(content)
         output_file = test_utils.save_test_output(html, "test_nested_strings")
@@ -140,27 +144,27 @@ pymd.code(code_sample, "python")
     def test_syntax_compatibility(self):
         """Test backward compatibility and new syntax together"""
         content = """
-# Compatibility Test
-
-Regular text paragraph.
-
-- List item 1
-- List item 2
-
-```
+# # Compatibility Test
+# 
+# Regular text paragraph.
+# 
+# - List item 1
+# - List item 2
+# 
+# ```
 # This is Python code, not a header
 x = 42
 print(f"Value: {x}")
-```
-
-1. Ordered item 1
-2. Ordered item 2
-
-```
+# ```
+# 
+# 1. Ordered item 1
+# 2. Ordered item 2
+# 
+# ```
 pymd.h3("Generated Header from Code")
-```
-
-Final text paragraph.
+# ```
+# 
+# Final text paragraph.
 """
         html = self.renderer.parse_and_render(content)
         output_file = test_utils.save_test_output(html, "test_compatibility")
