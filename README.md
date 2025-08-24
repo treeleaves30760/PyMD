@@ -4,7 +4,7 @@
 
 PyMD is a revolutionary markup language that creates **executable Python files** that also render beautifully as markdown documents. All markdown content is prefixed with `#` (making it Python comments), while code blocks contain regular executable Python code that prints markdown during rendering.
 
-![Screen Shot](./images/v0.1.6.png)
+![Screen Shot](./assets/v0.1.6.png)
 
 ## ✨ Features
 
