@@ -60,14 +60,14 @@ print(f"Square root of total: {sqrt_total:.2f}")
         assert html1 == html2, "Cached and non-cached results should be identical"
         
         # Verify we have cache entries
-        assert len(renderer.code_cache) > 0, "Cache should contain entries after rendering"
+        assert len(renderer.code_executor.code_cache) > 0, "Cache should contain entries after rendering"
         
         # Performance should improve (at least for non-trivial content)
         print(f"First render: {first_render_time:.3f}s, Cached render: {second_render_time:.3f}s")
         
         # For meaningful performance tests, first render should be slower when content has computation
         # But we'll just verify the cache is working by checking cache entries
-        assert len(renderer.code_cache) == 2, "Should have cached 2 code blocks"
+        assert len(renderer.code_executor.code_cache) == 2, "Should have cached 2 code blocks"
     
     def test_cache_invalidation(self):
         """Test that cache is properly invalidated when content changes"""
@@ -90,11 +90,11 @@ print(f"x = {x}")
         
         # Render base content
         html1 = renderer.parse_and_render(base_content)
-        cache_size_1 = len(renderer.code_cache)
+        cache_size_1 = len(renderer.code_executor.code_cache)
         
         # Render modified content
         html2 = renderer.parse_and_render(modified_content)
-        cache_size_2 = len(renderer.code_cache)
+        cache_size_2 = len(renderer.code_executor.code_cache)
         
         # Results should be different
         assert html1 != html2, "Different content should produce different results"
@@ -115,16 +115,16 @@ print("Hello from cache test")
         
         # Render to populate cache
         renderer.parse_and_render(content)
-        assert len(renderer.code_cache) > 0, "Cache should be populated"
+        assert len(renderer.code_executor.code_cache) > 0, "Cache should be populated"
         
         # Clear cache
         renderer.clear_cache()
-        assert len(renderer.code_cache) == 0, "Cache should be empty after clearing"
+        assert len(renderer.code_executor.code_cache) == 0, "Cache should be empty after clearing"
         assert renderer.last_full_content_hash is None, "Content hash should be reset"
         
         # Render again should repopulate cache
         renderer.parse_and_render(content)
-        assert len(renderer.code_cache) > 0, "Cache should be repopulated"
+        assert len(renderer.code_executor.code_cache) > 0, "Cache should be repopulated"
 
 
 if __name__ == "__main__":

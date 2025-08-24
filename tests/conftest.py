@@ -8,10 +8,10 @@ import tempfile
 import shutil
 from pathlib import Path
 
-# Add pymd to path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), 'pymd'))
+# Add project root to path for imports
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from renderer import PyMDRenderer
+from pymd.renderer import PyMDRenderer
 
 
 class TestUtils:
