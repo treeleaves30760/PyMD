@@ -22,7 +22,9 @@ class PyMDFileHandler(FileSystemEventHandler):
     def __init__(self, socketio, file_path):
         self.socketio = socketio
         self.file_path = file_path
-        self.renderer = PyMDRenderer()
+        # Set output directory based on the file location
+        output_dir = os.path.dirname(file_path) if file_path else os.getcwd()
+        self.renderer = PyMDRenderer(output_dir=output_dir)
         self.last_modified = 0
 
     def on_modified(self, event):
@@ -68,7 +70,13 @@ class PyMDServer:
         self.app = Flask(__name__)
         self.app.config['SECRET_KEY'] = 'pymd_secret_key'
         self.socketio = SocketIO(self.app, cors_allowed_origins="*")
-        self.renderer = PyMDRenderer()
+        
+        # Set output directory based on the file location
+        if self.file_path:
+            output_dir = os.path.dirname(self.file_path)
+        else:
+            output_dir = os.getcwd()
+        self.renderer = PyMDRenderer(output_dir=output_dir)
         self.observer = None
 
         self.setup_routes()
@@ -197,6 +205,84 @@ class PyMDServer:
                 })
             except Exception as e:
                 return jsonify({'success': False, 'error': str(e)})
+
+        @self.app.route('/editor/videos/<path:filename>')
+        def serve_videos(filename):
+            """Serve video files from the videos directory"""
+            try:
+                # Get the directory where the .pymd file is located
+                if self.file_path:
+                    base_dir = os.path.dirname(self.file_path)
+                else:
+                    base_dir = os.getcwd()
+                videos_dir = os.path.join(base_dir, 'videos')
+                
+                # Debug logging
+                print(f"Serving video: {filename} from {videos_dir}")
+                
+                # Check if file exists
+                file_path = os.path.join(videos_dir, filename)
+                if not os.path.exists(file_path):
+                    print(f"Video file not found: {file_path}")
+                    return f"Video file not found: {file_path}", 404
+                
+                return send_from_directory(videos_dir, filename)
+            except Exception as e:
+                print(f"Error serving video {filename}: {str(e)}")
+                return f"Video not found: {str(e)}", 404
+
+        @self.app.route('/editor/images/<path:filename>')
+        def serve_images(filename):
+            """Serve image files from the images directory"""
+            try:
+                # Get the directory where the .pymd file is located
+                if self.file_path:
+                    base_dir = os.path.dirname(self.file_path)
+                else:
+                    base_dir = os.getcwd()
+                images_dir = os.path.join(base_dir, 'images')
+                
+                # Debug logging
+                print(f"Serving image: {filename} from {images_dir}")
+                
+                # Check if file exists
+                file_path = os.path.join(images_dir, filename)
+                if not os.path.exists(file_path):
+                    print(f"Image file not found: {file_path}")
+                    return f"Image file not found: {file_path}", 404
+                
+                return send_from_directory(images_dir, filename)
+            except Exception as e:
+                print(f"Error serving image {filename}: {str(e)}")
+                return f"Image not found: {str(e)}", 404
+
+        @self.app.route('/videos/<path:filename>')
+        def serve_videos_root(filename):
+            """Serve video files from the videos directory (root path)"""
+            try:
+                # Get the directory where the .pymd file is located
+                if self.file_path:
+                    base_dir = os.path.dirname(self.file_path)
+                else:
+                    base_dir = os.getcwd()
+                videos_dir = os.path.join(base_dir, 'videos')
+                return send_from_directory(videos_dir, filename)
+            except Exception as e:
+                return f"Video not found: {str(e)}", 404
+
+        @self.app.route('/images/<path:filename>')
+        def serve_images_root(filename):
+            """Serve image files from the images directory (root path)"""
+            try:
+                # Get the directory where the .pymd file is located
+                if self.file_path:
+                    base_dir = os.path.dirname(self.file_path)
+                else:
+                    base_dir = os.getcwd()
+                images_dir = os.path.join(base_dir, 'images')
+                return send_from_directory(images_dir, filename)
+            except Exception as e:
+                return f"Image not found: {str(e)}", 404
 
         @self.app.route('/')
         def display():

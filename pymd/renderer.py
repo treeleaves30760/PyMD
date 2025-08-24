@@ -90,10 +90,10 @@ class PyMD:
             self.renderer.add_element('code', content, html)
         return html
 
-    def image(self, plot_obj=None, caption: str = '') -> str:
-        """Render matplotlib plot or other image objects"""
+    def image(self, image_source=None, caption: str = '') -> str:
+        """Render matplotlib plot, image file path, or other image objects"""
         if self.renderer:
-            return self.renderer.render_image(plot_obj, caption)
+            return self.renderer.render_image(image_source, caption)
         return f'<p>Image: {caption}</p>'
 
     def video(self, video_path: str, caption: str = '', width: str = '100%', height: str = 'auto', controls: bool = True, autoplay: bool = False, loop: bool = False) -> str:
@@ -178,6 +178,89 @@ class PyMDRenderer:
             'filename': filename,
             'file_path': file_path,
             'relative_path': relative_path,
+            'base64': img_base64,
+            'caption': caption
+        }
+        
+        self.captured_images.append(image_info)
+        return image_info
+
+    def _render_image_from_file(self, image_path: str, caption: str = '') -> str:
+        """Render image from file path"""
+        try:
+            # Check if image file exists
+            if not os.path.exists(image_path):
+                raise FileNotFoundError(f"Image file not found: {image_path}")
+            
+            # Copy image to images directory and get info
+            image_info = self._save_image_file_to_images_dir(image_path, caption=caption)
+            
+            html = f'''
+            <div class="image-container">
+                <img src="{image_info['relative_path']}" 
+                     alt="{caption}" 
+                     style="max-width: 100%; height: auto;"
+                     onerror="this.onerror=null; this.src='data:image/png;base64,{image_info['base64']}';">
+                {f'<p class="image-caption">{caption}</p>' if caption else ''}
+            </div>
+            '''
+            
+            self.add_element('image', image_info, html)
+            return html
+
+        except Exception as e:
+            error_html = f'<p class="error">Error rendering image: {str(e)}</p>'
+            self.add_element('image', f'Error: {str(e)}', error_html)
+            return error_html
+
+    def _save_image_file_to_images_dir(self, image_path: str, filename: str = None, caption: str = '') -> Dict[str, str]:
+        """Copy image file to images directory and return image info"""
+        import shutil
+        
+        self._ensure_images_dir()
+        
+        if filename is None:
+            # Try to preserve the original filename from the image_path
+            original_filename = os.path.basename(image_path)
+            if original_filename and not original_filename.startswith('.'):
+                # Use the original filename if it's valid
+                filename = original_filename
+                # Check if filename already exists and make it unique if necessary
+                base_name, ext = os.path.splitext(filename)
+                counter = 1
+                while os.path.exists(os.path.join(self.images_dir, filename)):
+                    filename = f"{base_name}_{counter}{ext}"
+                    counter += 1
+            else:
+                # Fall back to generating a unique filename
+                self.image_counter += 1
+                _, ext = os.path.splitext(image_path)
+                if not ext:
+                    ext = '.png'  # default extension
+                filename = f"image_{self.image_counter}_{uuid.uuid4().hex[:8]}{ext}"
+        
+        file_path = os.path.join(self.images_dir, filename)
+        relative_path = f"images/{filename}"
+        
+        try:
+            # Copy image file to images directory
+            shutil.copy2(image_path, file_path)
+        except Exception as e:
+            raise Exception(f"Failed to copy image file: {str(e)}")
+        
+        # Also create base64 for fallback
+        try:
+            import base64
+            with open(file_path, 'rb') as img_file:
+                img_base64 = base64.b64encode(img_file.read()).decode()
+        except Exception:
+            img_base64 = ''  # If base64 encoding fails, use empty string
+        
+        image_info = {
+            'filename': filename,
+            'file_path': file_path,
+            'relative_path': relative_path,
+            'original_path': image_path,
             'base64': img_base64,
             'caption': caption
         }
@@ -312,6 +395,11 @@ class PyMDRenderer:
         }
 
         try:
+            # Ensure output directories exist before code execution
+            # This allows users to save files directly to these directories
+            self._ensure_images_dir()
+            self._ensure_videos_dir()
+            
             # Parse input mock values
             input_mocks = self._parse_input_mocks(code)
 
@@ -393,33 +481,39 @@ class PyMDRenderer:
 
         return result
 
-    def render_image(self, plot_obj=None, caption: str = '') -> str:
-        """Render matplotlib plot to both file and base64 encoded image"""
+    def render_image(self, image_source=None, caption: str = '') -> str:
+        """Render matplotlib plot, image file path, or other image objects"""
         try:
-            if plot_obj is None:
-                # If no specific plot object, use current figure
-                fig = plt.gcf()
+            # Check if image_source is a file path
+            if isinstance(image_source, str):
+                # Handle file path case
+                return self._render_image_from_file(image_source, caption)
             else:
-                fig = plot_obj
+                # Handle matplotlib figure case
+                if image_source is None:
+                    # If no specific plot object, use current figure
+                    fig = plt.gcf()
+                else:
+                    fig = image_source
 
-            # Save figure to file and get info
-            image_info = self._save_figure_to_file(fig, caption=caption)
+                # Save figure to file and get info
+                image_info = self._save_figure_to_file(fig, caption=caption)
 
-            # Clear the current figure to prevent memory leaks
-            plt.clf()
+                # Clear the current figure to prevent memory leaks
+                plt.clf()
 
-            html = f'''
-            <div class="image-container">
-                <img src="{image_info['relative_path']}" 
-                     alt="{caption}" 
-                     style="max-width: 100%; height: auto;"
-                     onerror="this.onerror=null; this.src='data:image/png;base64,{image_info['base64']}';">
-                {f'<p class="image-caption">{caption}</p>' if caption else ''}
-            </div>
-            '''
+                html = f'''
+                <div class="image-container">
+                    <img src="{image_info['relative_path']}" 
+                         alt="{caption}" 
+                         style="max-width: 100%; height: auto;"
+                         onerror="this.onerror=null; this.src='data:image/png;base64,{image_info['base64']}';">
+                    {f'<p class="image-caption">{caption}</p>' if caption else ''}
+                </div>
+                '''
 
-            self.add_element('image', image_info, html)
-            return html
+                self.add_element('image', image_info, html)
+                return html
 
         except Exception as e:
             error_html = f'<p class="error">Error rendering image: {str(e)}</p>'
@@ -432,13 +526,47 @@ class PyMDRenderer:
         
         self._ensure_videos_dir()
         
+        # Check if the video_path is already in the videos directory
+        abs_video_path = os.path.abspath(video_path)
+        abs_videos_dir = os.path.abspath(self.videos_dir)
+        
+        if abs_video_path.startswith(abs_videos_dir + os.sep):
+            # Video is already in the videos directory, no need to copy
+            filename = os.path.basename(video_path)
+            file_path = abs_video_path
+            relative_path = f"videos/{filename}"
+            
+            video_info = {
+                'filename': filename,
+                'file_path': file_path,
+                'relative_path': relative_path,
+                'original_path': video_path,
+                'caption': caption
+            }
+            
+            self.captured_videos.append(video_info)
+            return video_info
+        
         if filename is None:
-            self.video_counter += 1
-            # Get original file extension
-            _, ext = os.path.splitext(video_path)
-            if not ext:
-                ext = '.mp4'  # default extension
-            filename = f"video_{self.video_counter}_{uuid.uuid4().hex[:8]}{ext}"
+            # Try to preserve the original filename from the video_path
+            original_filename = os.path.basename(video_path)
+            if original_filename and not original_filename.startswith('.'):
+                # Use the original filename if it's valid
+                filename = original_filename
+                # Check if filename already exists and make it unique if necessary
+                base_name, ext = os.path.splitext(filename)
+                counter = 1
+                while os.path.exists(os.path.join(self.videos_dir, filename)):
+                    filename = f"{base_name}_{counter}{ext}"
+                    counter += 1
+            else:
+                # Fall back to generating a unique filename
+                self.video_counter += 1
+                # Get original file extension
+                _, ext = os.path.splitext(video_path)
+                if not ext:
+                    ext = '.mp4'  # default extension
+                filename = f"video_{self.video_counter}_{uuid.uuid4().hex[:8]}{ext}"
         
         file_path = os.path.join(self.videos_dir, filename)
         relative_path = f"videos/{filename}"

@@ -1,11 +1,12 @@
+import pymd
 # # PyMD: Python-Executable Markdown
 #
 # Welcome to PyMD! This document demonstrates the powerful combination of markdown-style syntax with Python code execution.
 #
 # ## Key Features
 #
-# - **Markdown Syntax**: Use familiar markdown prefixed with `#` 
-# - **Python Execution**: Run Python code inside ``` blocks  
+# - **Markdown Syntax**: Use familiar markdown prefixed with `#`
+# - **Python Execution**: Run Python code inside ``` blocks
 # - **Variable Persistence**: Variables persist across code blocks
 # - **Beautiful Output**: Clean, responsive HTML rendering
 # - **Executable Files**: Run directly as Python with `python filename.pymd`
@@ -16,8 +17,13 @@
 #
 # ```
 # Define some variables
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation, PillowWriter
+import datetime
+import numpy as np
+import pandas as pd
 name = "PyMD"
-version = "0.1.6" 
+version = "0.1.6"
 year = "2025"
 
 print(f"## Welcome to **{name}** v{version}!")
@@ -42,8 +48,6 @@ print(f"Average: **{average}**")
 # ## Data Analysis with Pandas
 #
 # ```
-import pandas as pd
-import numpy as np
 
 # Create sample sales data
 np.random.seed(42)
@@ -58,14 +62,15 @@ for product in products:
 
 df = pd.DataFrame(data)
 print("**Sample Sales Data:**")
-print(df.head(10).to_string())
+print(df.head(10).to_markdown())
 # ```
 #
 # Let's analyze this data:
 #
 # ```
 # Calculate total sales by product
-product_totals = df.groupby('Product')['Sales'].sum().sort_values(ascending=False)
+product_totals = df.groupby(
+    'Product')['Sales'].sum().sort_values(ascending=False)
 print("**Total Sales by Product:**")
 for product, sales in product_totals.items():
     print(f"  {product}: **${sales:,}**")
@@ -80,8 +85,8 @@ print(f"**Total sales across all products:** ${product_totals.sum():,}")
 #
 # ```
 # Interactive input with mock values
-user_name = input("What's your name? ") # input: Alice
-user_age = input("How old are you? ") # input: 28
+user_name = input("What's your name? ")  # input: Alice
+user_age = input("How old are you? ")  # input: 28
 
 print(f"### User Profile: {user_name}")
 print(f"**Name:** {user_name}")
@@ -108,7 +113,6 @@ else:
 #
 # ```
 # Real-time updates
-import datetime
 current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 print(f"Document last executed: **{current_time}**")
 
@@ -117,7 +121,24 @@ message = "Try changing this message and saving the file!"
 print(f"**Message:** {message}")
 # ```
 #
-# ## Video Support (NEW!)
+# ## Image Support
+#
+# ```
+# Image rendering API demonstration
+print("You can use the `pymd.image()` or directly use `plt.show()` function to render images:")
+
+# Create a simple plot
+plt.figure(figsize=(6, 4))
+plt.plot(np.array([np.sin(i / 100) + (np.random.randn()) / 100
+         for i in range(628)]))
+plt.title('Random Data Plot')
+plt.xlabel('Index')
+plt.ylabel('Value')
+plt.grid(True)
+plt.show()
+# ```
+#
+# ## Video Support
 #
 # PyMD now supports video rendering with the new `pymd.video()` function:
 #
@@ -128,16 +149,83 @@ print("PyMD now supports embedded videos with customizable options:")
 
 # Example API calls (would work with real video files):
 print("### Basic Video Usage")
-print("```python")
-print("# Basic video with caption")
-print("pymd.video('my_video.mp4', 'This is my video caption')")
-print("")
-print("# Customized video with options")
-print("pymd.video('demo.mp4', 'Demo video', width='80%', autoplay=True, loop=True)")
-print("")
-print("# Background video without controls")
-print("pymd.video('bg_video.mp4', width='100%', controls=False, autoplay=True, loop=True)")
-print("```")
+code = """# Use matplotlib to create a video of sin wave
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation, PillowWriter
+
+# Parameters
+fps = 30          # frames per second
+seconds = 6       # total duration
+frames = fps * seconds
+x = np.linspace(0, 2*np.pi, 1000)
+
+# Single chart (no subplots), no explicit colors
+fig, ax = plt.subplots(figsize=(6, 3.5))
+ax.set_xlim(x.min(), x.max())
+ax.set_ylim(-1.2, 1.2)
+ax.set_xlabel("x")
+ax.set_ylabel("sin(x + phase)")
+ax.set_title("Animated Sine Wave")
+
+(line,) = ax.plot([], [])  # line to update
+
+def init():
+    line.set_data([], [])
+    return (line,)
+
+def update(frame):
+    phase = 2*np.pi * frame / frames * 2.0   # two full phase cycles over the animation
+    y = np.sin(x + phase)
+    line.set_data(x, y)
+    return (line,)
+
+anim = FuncAnimation(fig, update, init_func=init, frames=frames, interval=1000/fps, blit=True)
+
+# Save as GIF (no ffmpeg required)
+anim.save("videos/sine_wave.gif", writer=PillowWriter(fps=fps))
+pymd.video("videos/sine_wave.gif", "Animated Sine Wave")
+"""
+
+pymd.code(code, language='python')
+
+
+# Parameters
+fps = 30          # frames per second
+seconds = 6       # total duration
+frames = fps * seconds
+x = np.linspace(0, 2*np.pi, 1000)
+
+# Single chart (no subplots), no explicit colors
+fig, ax = plt.subplots(figsize=(6, 3.5))
+ax.set_xlim(x.min(), x.max())
+ax.set_ylim(-1.2, 1.2)
+ax.set_xlabel("x")
+ax.set_ylabel("sin(x + phase)")
+ax.set_title("Animated Sine Wave")
+
+(line,) = ax.plot([], [])  # line to update
+
+
+def init():
+    line.set_data([], [])
+    return (line,)
+
+
+def update(frame):
+    # two full phase cycles over the animation
+    phase = 2*np.pi * frame / frames * 2.0
+    y = np.sin(x + phase)
+    line.set_data(x, y)
+    return (line,)
+
+
+anim = FuncAnimation(fig, update, init_func=init,
+                     frames=frames, interval=1000/fps, blit=True)
+
+# Save as GIF (no ffmpeg required)
+anim.save("videos/sine_wave.gif", writer=PillowWriter(fps=fps))
+pymd.video("videos/sine_wave.gif", "Animated Sine Wave")
 # ```
 #
 # ### Video API Reference
@@ -147,7 +235,7 @@ print("```")
 # | Parameter | Type | Default | Description |
 # |-----------|------|---------|-------------|
 # | video_path | str | required | Path to video file |
-# | caption | str | '' | Optional caption |  
+# | caption | str | '' | Optional caption |
 # | width | str | '100%' | Video width (CSS) |
 # | height | str | 'auto' | Video height (CSS) |
 # | controls | bool | True | Show video controls |
@@ -158,16 +246,17 @@ print("```")
 # Demonstrate video file organization
 print("### Video File Management")
 print("Videos are automatically organized in your output:")
-print("```")
-print("output/")
-print("├── videos/")
-print("│   ├── video_1_abc123.mp4")
-print("│   ├── video_2_def456.mp4") 
-print("│   └── ...")
-print("├── images/")
-print("│   └── (existing plots)")
-print("└── output.html")
-print("```")
+video_output_structure = """output/
+├── videos/
+│   ├── video_1_abc123.mp4
+│   ├── video_2_def456.mp4
+│   └── ...
+├── images/
+│   └── (existing plots)
+└── output.html
+"""
+
+pymd.code(video_output_structure)
 
 print("**Key Features:**")
 print("- Automatic video file copying to output directory")
@@ -195,10 +284,14 @@ print(f"**Success Message:** {success_message}")
 # Show some final stats
 print("### Document Stats")
 print(f"- Data points analyzed: **{len(df)}**")
-print(f"- Variables available: **{len([var for var in globals() if not var.startswith('_')])}**")
+print(
+    f"- Variables available: **{len([var for var in globals() if not var.startswith('_')])}**")
 # ```
 #
 # That's PyMD in action! Try modifying the code blocks above and watch the results update in real-time with the live preview server.
 #
 # // This is a comment - it won't appear in the rendered output
 # // Perfect for leaving notes during development!
+#
+#
+#
