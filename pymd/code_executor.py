@@ -6,7 +6,8 @@ import sys
 import io
 import traceback
 import hashlib
-from typing import Dict, Any
+import time
+from typing import Dict, Any, Optional
 
 
 class CodeExecutor:
@@ -16,6 +17,13 @@ class CodeExecutor:
         self.variables = {}
         self.code_cache = {}
         self.max_cache_size = 100  # Maximum number of cached results
+        self.execution_stats = {
+            'total_executions': 0,
+            'cache_hits': 0,
+            'cache_misses': 0,
+            'total_execution_time': 0.0,
+            'average_execution_time': 0.0
+        }
     
     def _get_code_hash(self, code: str, variables_snapshot: Dict[str, Any]) -> str:
         """Generate a hash for code block and variable state"""
@@ -40,6 +48,31 @@ class CodeExecutor:
     def clear_cache(self):
         """Clear all cached results"""
         self.code_cache.clear()
+        self.execution_stats = {
+            'total_executions': 0,
+            'cache_hits': 0,
+            'cache_misses': 0,
+            'total_execution_time': 0.0,
+            'average_execution_time': 0.0
+        }
+    
+    def get_execution_stats(self) -> Dict[str, Any]:
+        """Get execution statistics"""
+        return self.execution_stats.copy()
+    
+    def _detect_heavy_imports(self, code: str) -> list[str]:
+        """Detect imports that might take time to load"""
+        heavy_imports = []
+        lines = code.split('\n')
+        
+        for line in lines:
+            line = line.strip()
+            if line.startswith('import ') or line.startswith('from '):
+                # Check for known heavy imports
+                if any(lib in line for lib in ['matplotlib', 'pandas', 'numpy', 'scipy', 'sklearn', 'tensorflow', 'torch', 'plotly']):
+                    heavy_imports.append(line)
+        
+        return heavy_imports
 
     def _manage_cache_size(self):
         """Remove oldest cache entries if cache is too large"""
@@ -82,8 +115,11 @@ class CodeExecutor:
         return mock_input
     
     def execute_code(self, code: str, cache_key: str = None, 
-                    custom_globals: Dict[str, Any] = None) -> Dict[str, Any]:
+                    custom_globals: Dict[str, Any] = None, 
+                    status_callback: Optional[callable] = None) -> Dict[str, Any]:
         """Execute Python code and capture output with caching"""
+        start_time = time.time()
+        
         # Generate cache key if not provided
         if cache_key is None:
             variables_snapshot = self._get_variable_snapshot()
@@ -91,10 +127,18 @@ class CodeExecutor:
 
         # Check cache first
         if cache_key in self.code_cache:
-            cached_result = self.code_cache[cache_key]
+            cached_result = self.code_cache[cache_key].copy()
             # Restore variables from cache
             self.variables.update(cached_result['variables'])
-            return cached_result.copy()
+            
+            # Update stats
+            self.execution_stats['cache_hits'] += 1
+            self.execution_stats['total_executions'] += 1
+            
+            if status_callback:
+                status_callback("Using cached result")
+            
+            return cached_result
 
         # Capture stdout and stderr
         old_stdout = sys.stdout
@@ -102,12 +146,20 @@ class CodeExecutor:
         stdout_capture = io.StringIO()
         stderr_capture = io.StringIO()
 
+        # Check for heavy imports and notify
+        heavy_imports = self._detect_heavy_imports(code)
+        if heavy_imports and status_callback:
+            status_callback(f"Loading libraries: {', '.join(heavy_imports)}")
+        
         result = {
             'success': True,
             'output': '',
             'error': '',
             'variables': {},
-            'cache_key': cache_key
+            'cache_key': cache_key,
+            'execution_time': 0.0,
+            'was_cached': False,
+            'heavy_imports': heavy_imports
         }
 
         try:
@@ -155,6 +207,18 @@ class CodeExecutor:
 
             result['output'] = stdout_capture.getvalue()
             result['variables'] = self.variables.copy()
+            
+            # Record execution time
+            execution_time = time.time() - start_time
+            result['execution_time'] = execution_time
+            
+            # Update stats
+            self.execution_stats['cache_misses'] += 1
+            self.execution_stats['total_executions'] += 1
+            self.execution_stats['total_execution_time'] += execution_time
+            self.execution_stats['average_execution_time'] = (
+                self.execution_stats['total_execution_time'] / self.execution_stats['total_executions']
+            )
 
             # Cache the successful result
             self.code_cache[cache_key] = result.copy()
@@ -165,6 +229,18 @@ class CodeExecutor:
             result['error'] = traceback.format_exc()
             result['output'] = stdout_capture.getvalue()
             result['variables'] = self.variables.copy()
+            
+            # Record execution time even for errors
+            execution_time = time.time() - start_time
+            result['execution_time'] = execution_time
+            
+            # Update stats
+            self.execution_stats['cache_misses'] += 1
+            self.execution_stats['total_executions'] += 1
+            self.execution_stats['total_execution_time'] += execution_time
+            self.execution_stats['average_execution_time'] = (
+                self.execution_stats['total_execution_time'] / self.execution_stats['total_executions']
+            )
 
             # Cache the error result too to avoid re-executing failing code
             self.code_cache[cache_key] = result.copy()

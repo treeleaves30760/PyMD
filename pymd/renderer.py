@@ -6,7 +6,8 @@ Renders PyMD syntax to HTML with live Python code execution
 import re
 import os
 import hashlib
-from typing import Dict, Any, Optional
+import time
+from typing import Dict, Any, Optional, Callable
 
 # Import modular components
 from .image_handler import ImageHandler
@@ -46,10 +47,20 @@ class PyMDRenderer:
     Main renderer class for PyMD documents
     """
 
-    def __init__(self, output_dir: Optional[str] = None):
+    def __init__(self, output_dir: Optional[str] = None, progress_callback: Optional[Callable[[str, float], None]] = None):
         self.elements = []
         self.output_dir = output_dir or os.getcwd()
         self.last_full_content_hash = None
+        self.progress_callback = progress_callback
+        self.status_info = {
+            'current_step': 'Initializing',
+            'progress': 0.0,
+            'total_steps': 0,
+            'current_step_index': 0,
+            'cache_hits': 0,
+            'cache_misses': 0,
+            'start_time': None
+        }
 
         # Initialize modular components
         self.image_handler = ImageHandler(self.output_dir)
@@ -118,12 +129,28 @@ class PyMDRenderer:
 
         return custom_show
 
+    def _update_status(self, step: str, progress: float = None):
+        """Update rendering status and call progress callback if provided"""
+        self.status_info['current_step'] = step
+        if progress is not None:
+            self.status_info['progress'] = progress
+        
+        if self.progress_callback:
+            self.progress_callback(step, self.status_info['progress'])
+        # No default console output - progress is handled by callback only
+    
+    def get_status_info(self) -> Dict[str, Any]:
+        """Get current rendering status information"""
+        return self.status_info.copy()
+    
     def clear_cache(self):
         """Clear all cached results"""
         self.code_executor.clear_cache()
         self.last_full_content_hash = None
+        self.status_info['cache_hits'] = 0
+        self.status_info['cache_misses'] = 0
 
-    def execute_code(self, code: str, cache_key: str = None) -> Dict[str, Any]:
+    def execute_code(self, code: str, cache_key: str = None, status_callback: callable = None) -> Dict[str, Any]:
         """Execute Python code and capture output with caching"""
         # Prepare custom globals with PyMD components
         custom_globals = {
@@ -132,7 +159,7 @@ class PyMDRenderer:
             'pd': pd,
         }
 
-        return self.code_executor.execute_code(code, cache_key, custom_globals)
+        return self.code_executor.execute_code(code, cache_key, custom_globals, status_callback)
 
     def _get_custom_plt(self):
         """Get custom matplotlib object with custom show method"""
@@ -246,16 +273,24 @@ class PyMDRenderer:
 
     def parse_and_render(self, pymd_content: str) -> str:
         """Parse PyMD content with ``` blocks for code and # prefixed markdown content"""
+        self.status_info['start_time'] = time.time()
+        self._update_status("Starting render process", 0.0)
+        
         # Check if content has changed significantly
         content_hash = self._get_content_hash(pymd_content)
 
         # For incremental updates, we need to detect what changed
         if self.last_full_content_hash and self.last_full_content_hash == content_hash:
             # Content hasn't changed, return cached HTML
+            self._update_status("Using cached result", 100.0)
+            self.status_info['cache_hits'] += 1
             return self.generate_html()
+        
+        self.status_info['cache_misses'] += 1
 
         # Content changed, need to re-parse
         self.last_full_content_hash = content_hash
+        self._update_status("Parsing content", 5.0)
 
         # Extract code blocks for change detection (could be used for future optimizations)
         # current_code_blocks = self._extract_code_blocks(pymd_content)
@@ -264,8 +299,11 @@ class PyMDRenderer:
         self.elements = []
 
         lines = pymd_content.split('\n')
+        total_lines = len(lines)
         i = 0
         code_block_index = 0
+        
+        self._update_status("Processing content blocks", 10.0)
 
         while i < len(lines):
             line = lines[i]
@@ -305,11 +343,26 @@ class PyMDRenderer:
                 if code_lines:
                     code_block = '\n'.join(code_lines)
                     try:
+                        # Update progress for code execution
+                        progress = 10.0 + (i / total_lines) * 70.0
+                        self._update_status(f"Executing code block {code_block_index + 1}", progress)
+                        
                         # Create cache key for this specific code block
                         variables_snapshot = self.code_executor._get_variable_snapshot()
                         cache_key = f"exec_{code_block_index}_{self.code_executor._get_code_hash(code_block, variables_snapshot)}"
 
-                        result = self.execute_code(code_block, cache_key)
+                        # Check if this is a cache hit
+                        is_cached = cache_key in self.code_executor.code_cache
+                        if is_cached:
+                            self.status_info['cache_hits'] += 1
+                        else:
+                            self.status_info['cache_misses'] += 1
+                        
+                        # Create status callback for heavy import detection
+                        def status_update(status):
+                            self._update_status(f"{status}", progress)
+                        
+                        result = self.execute_code(code_block, cache_key, status_update)
                         if result['success']:
                             if result['output'].strip():
                                 # Process print output as markdown
@@ -407,11 +460,26 @@ class PyMDRenderer:
                     if code_lines:
                         code_block = '\n'.join(code_lines)
                         try:
+                            # Update progress for code execution
+                            progress = 10.0 + (i / total_lines) * 70.0
+                            self._update_status(f"Executing embedded code block {code_block_index + 1}", progress)
+                            
                             # Create cache key for this specific code block
                             variables_snapshot = self.code_executor._get_variable_snapshot()
                             cache_key = f"exec_{code_block_index}_{self.code_executor._get_code_hash(code_block, variables_snapshot)}"
 
-                            result = self.execute_code(code_block, cache_key)
+                            # Check if this is a cache hit
+                            is_cached = cache_key in self.code_executor.code_cache
+                            if is_cached:
+                                self.status_info['cache_hits'] += 1
+                            else:
+                                self.status_info['cache_misses'] += 1
+                            
+                            # Create status callback for heavy import detection
+                            def status_update(status):
+                                self._update_status(f"{status}", progress)
+                            
+                            result = self.execute_code(code_block, cache_key, status_update)
                             if result['success']:
                                 if result['output'].strip():
                                     # Process print output as markdown
@@ -733,7 +801,15 @@ class PyMDRenderer:
                 self.add_element('text', stripped_line, text_html)
             i += 1
 
-        return self.generate_html()
+        self._update_status("Generating HTML output", 80.0)
+        html_result = self.generate_html()
+        
+        elapsed_time = time.time() - self.status_info['start_time']
+        self._update_status(f"Render complete ({elapsed_time:.2f}s)", 100.0)
+        
+        # Final status summary is handled by CLI, not here
+        
+        return html_result
 
     def generate_html(self) -> str:
         """Generate complete HTML document"""

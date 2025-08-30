@@ -1,3 +1,4 @@
+import pymd
 # # Complex Code Example PyMD
 #
 # ## Import the Module
@@ -104,7 +105,7 @@ print("### Gemma-3 Response about TCP/IP:")
 print("=" * 50)
 print(clean_response)
 print("=" * 50)
-print("✅ **Generation completed successfully!**")
+print("✅ **Generation completed successful!**")
 # ```
 #
 # ## This is a LLM text generation example with PyMD
@@ -114,5 +115,5 @@ print("✅ **Generation completed successfully!**")
 # - **Error handling with fallback strategies**  
 # - **AI text generation integration**
 # - **Markdown output formatting from code execution**
-# 
+#
 # The file can be run directly as Python: `python example-complex.pymd`

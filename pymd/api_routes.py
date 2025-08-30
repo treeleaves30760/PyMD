@@ -4,6 +4,7 @@ API route handlers for PyMD server
 
 import os
 import json
+import time
 from flask import request, jsonify
 from .renderer import PyMDRenderer
 
@@ -11,11 +12,24 @@ from .renderer import PyMDRenderer
 class ApiRoutes:
     """Handles API endpoint routing and logic"""
     
-    def __init__(self, app, file_path, renderer):
+    def __init__(self, app, file_path, renderer, socketio=None):
         self.app = app
         self.file_path = file_path
         self.renderer = renderer
+        self.socketio = socketio
         self.setup_routes()
+        
+    def _create_progress_callback(self):
+        """Create a progress callback that emits via WebSocket"""
+        if self.socketio:
+            def progress_callback(step: str, progress: float):
+                self.socketio.emit('render_status', {
+                    'step': step,
+                    'progress': progress,
+                    'timestamp': time.time()
+                })
+            return progress_callback
+        return None
     
     def setup_routes(self):
         """Setup API Flask routes"""
@@ -25,7 +39,12 @@ class ApiRoutes:
             """API endpoint for rendering PyExecMD content"""
             try:
                 content = request.json.get('content', '')
-                html = self.renderer.parse_and_render(content)
+                
+                # Create a temporary renderer with WebSocket progress callback
+                output_dir = self.renderer.output_dir
+                temp_renderer = PyMDRenderer(output_dir=output_dir, progress_callback=self._create_progress_callback())
+                
+                html = temp_renderer.parse_and_render(content)
                 return jsonify({'success': True, 'html': html})
             except Exception as e:
                 return jsonify({'success': False, 'error': str(e)})
@@ -35,7 +54,12 @@ class ApiRoutes:
             """API endpoint for exporting PyExecMD content to Markdown"""
             try:
                 content = request.json.get('content', '')
-                markdown = self.renderer.to_markdown(content)
+                
+                # Create a temporary renderer with WebSocket progress callback
+                output_dir = self.renderer.output_dir
+                temp_renderer = PyMDRenderer(output_dir=output_dir, progress_callback=self._create_progress_callback())
+                
+                markdown = temp_renderer.to_markdown(content)
                 return jsonify({'success': True, 'markdown': markdown})
             except Exception as e:
                 return jsonify({'success': False, 'error': str(e)})

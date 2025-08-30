@@ -17,7 +17,16 @@ class PyMDFileHandler(FileSystemEventHandler):
         self.file_path = file_path
         # Set output directory based on the file location
         output_dir = os.path.dirname(file_path) if file_path else os.getcwd()
-        self.renderer = PyMDRenderer(output_dir=output_dir)
+        
+        # Create progress callback for WebSocket status updates
+        def progress_callback(step: str, progress: float):
+            self.socketio.emit('render_status', {
+                'step': step,
+                'progress': progress,
+                'timestamp': time.time()
+            })
+        
+        self.renderer = PyMDRenderer(output_dir=output_dir, progress_callback=progress_callback)
         self.last_modified = 0
 
     def on_modified(self, event):

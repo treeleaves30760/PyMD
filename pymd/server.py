@@ -6,6 +6,7 @@ Provides real-time rendering of PyExecMD files with auto-refresh
 import os
 import threading
 import argparse
+import time
 from flask import Flask
 from flask_socketio import SocketIO
 from .renderer import PyMDRenderer
@@ -32,11 +33,19 @@ class PyMDServer:
             output_dir = os.path.dirname(self.file_path)
         else:
             output_dir = os.getcwd()
-        self.renderer = PyMDRenderer(output_dir=output_dir)
+        # Create progress callback for WebSocket status updates
+        def progress_callback(step: str, progress: float):
+            self.socketio.emit('render_status', {
+                'step': step,
+                'progress': progress,
+                'timestamp': time.time()
+            })
+        
+        self.renderer = PyMDRenderer(output_dir=output_dir, progress_callback=progress_callback)
         self.file_watcher = FileWatcher(self.socketio)
         
         # Setup routes using modular components
-        self.api_routes = ApiRoutes(self.app, self.file_path, self.renderer)
+        self.api_routes = ApiRoutes(self.app, self.file_path, self.renderer, self.socketio)
         self.static_routes = StaticRoutes(self.app, self.file_path, self.renderer)
         self.setup_socketio()
 

@@ -7,15 +7,39 @@ Render PyExecMD files to HTML and start live preview servers
 import argparse
 import os
 import sys
+import time
 from .renderer import PyMDRenderer
 from .server import PyMDServer
 
 
+def progress_callback(step: str, progress: float):
+    """Progress callback for rendering status"""
+    if progress == 0.0:
+        print(f"\n🚀 {step}...")
+    elif progress == 100.0:
+        print(f"\r✅ {step}")
+    else:
+        # Create a simple progress bar
+        bar_length = 20
+        filled_length = int(bar_length * progress / 100)
+        bar = '█' * filled_length + '-' * (bar_length - filled_length)
+        print(f"\r🔄 {step} [{bar}] {progress:.1f}%", end="", flush=True)
+
 def render_command(args):
     """Render a PyExecMD file to HTML or Markdown"""
+    start_time = time.time()
+    
     # Set output directory for image saving
     output_dir = os.path.dirname(os.path.abspath(args.output)) if args.output else os.path.dirname(os.path.abspath(args.input))
-    renderer = PyMDRenderer(output_dir=output_dir)
+    
+    # Create renderer with progress callback if not quiet mode
+    callback = None if getattr(args, 'quiet', False) else progress_callback
+    renderer = PyMDRenderer(output_dir=output_dir, progress_callback=callback)
+    
+    # Clear cache if requested
+    if getattr(args, 'clear_cache', False):
+        renderer.clear_cache()
+        print("🧹 Cache cleared")
 
     if not os.path.exists(args.input):
         print(f"Error: Input file '{args.input}' does not exist")
@@ -36,9 +60,16 @@ def render_command(args):
             if args.output:
                 with open(args.output, 'w', encoding='utf-8') as f:
                     f.write(markdown)
-                print(f"✅ Successfully rendered '{args.input}' to '{args.output}' (Markdown)")
+                
+                # Get final status info
+                status = renderer.get_status_info()
+                elapsed = time.time() - start_time
+                
+                print(f"\n✅ Successfully rendered '{args.input}' to '{args.output}' (Markdown)")
+                print(f"⏱️  Total time: {elapsed:.2f}s")
+                print(f"💾 Cache hits: {status['cache_hits']}, misses: {status['cache_misses']}")
                 if renderer.captured_images:
-                    print(f"📷 Captured {len(renderer.captured_images)} image(s) in '{renderer.images_dir}'")
+                    print(f"📷 Captured {len(renderer.captured_images)} image(s) in '{renderer.image_handler.images_dir}'")
             else:
                 print(markdown)
         else:
@@ -46,9 +77,15 @@ def render_command(args):
             html = renderer.render_file(args.input, args.output)
 
             if args.output:
-                print(f"✅ Successfully rendered '{args.input}' to '{args.output}' (HTML)")
+                # Get final status info
+                status = renderer.get_status_info()
+                elapsed = time.time() - start_time
+                
+                print(f"\n✅ Successfully rendered '{args.input}' to '{args.output}' (HTML)")
+                print(f"⏱️  Total time: {elapsed:.2f}s")
+                print(f"💾 Cache hits: {status['cache_hits']}, misses: {status['cache_misses']}")
                 if renderer.captured_images:
-                    print(f"📷 Captured {len(renderer.captured_images)} image(s) in '{renderer.images_dir}'")
+                    print(f"📷 Captured {len(renderer.captured_images)} image(s) in '{renderer.image_handler.images_dir}'")
             else:
                 print(html)
 
@@ -232,6 +269,12 @@ def main():
     render_parser.add_argument(
         '-f', '--format', choices=['html', 'markdown'], default='html',
         help='Output format (default: html)')
+    render_parser.add_argument(
+        '-q', '--quiet', action='store_true',
+        help='Suppress progress output')
+    render_parser.add_argument(
+        '--clear-cache', action='store_true',
+        help='Clear cache before rendering')
     render_parser.set_defaults(func=render_command)
 
     # Serve command

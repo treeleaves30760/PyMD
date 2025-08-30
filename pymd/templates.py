@@ -223,11 +223,75 @@ DISPLAY_TEMPLATE = '''
         .pymd-content {
             animation: fadeIn 0.3s ease-in-out;
         }
+        
+        .render-status-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px 20px;
+            font-size: 14px;
+            z-index: 1000;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+        }
+        
+        .render-status-bar.show {
+            transform: translateY(0);
+        }
+        
+        .render-status-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .render-step {
+            font-weight: 500;
+        }
+        
+        .render-progress {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .mini-progress-bar {
+            width: 100px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        
+        .mini-progress-fill {
+            height: 100%;
+            background: white;
+            border-radius: 2px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
     </style>
 </head>
 <body>    
     <div id="content">
         {{ content|safe }}
+    </div>
+
+    <div class="render-status-bar" id="renderStatusBar">
+        <div class="render-status-content">
+            <div class="render-step" id="renderStep">Ready</div>
+            <div class="render-progress">
+                <div class="mini-progress-bar">
+                    <div class="mini-progress-fill" id="progressFill"></div>
+                </div>
+                <span id="renderProgress">0%</span>
+            </div>
+        </div>
     </div>
 
     <div class="footer">
@@ -243,6 +307,34 @@ DISPLAY_TEMPLATE = '''
             // Add a subtle flash effect
             content.style.opacity = '0.7';
             setTimeout(() => { content.style.opacity = '1'; }, 150);
+            
+            // Hide status bar after content update
+            const statusBar = document.getElementById('renderStatusBar');
+            setTimeout(() => {
+                statusBar.classList.remove('show');
+            }, 2000);
+        });
+        
+        // Listen for render status updates
+        socket.on('render_status', function(data) {
+            const statusBar = document.getElementById('renderStatusBar');
+            const stepEl = document.getElementById('renderStep');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('renderProgress');
+            
+            if (data.step && data.progress !== undefined) {
+                statusBar.classList.add('show');
+                stepEl.textContent = data.step;
+                progressFill.style.width = data.progress + '%';
+                progressText.textContent = Math.round(data.progress) + '%';
+                
+                // Auto-hide when complete
+                if (data.progress >= 100) {
+                    setTimeout(() => {
+                        statusBar.classList.remove('show');
+                    }, 3000);
+                }
+            }
         });
     </script>
 </body>
@@ -411,11 +503,13 @@ def get_editor_template(mode, filename, escaped_content, initial_html):
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(255, 255, 255, 0.75);
+            background: rgba(255, 255, 255, 0.9);
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             z-index: 10;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
         }}
 
         .spinner {{
@@ -425,6 +519,40 @@ def get_editor_template(mode, filename, escaped_content, initial_html):
             border-top-color: #667eea;
             border-radius: 50%;
             animation: spin 1s linear infinite;
+            margin-bottom: 16px;
+        }}
+        
+        .render-status {{
+            text-align: center;
+            color: #667eea;
+            font-weight: 500;
+        }}
+        
+        .render-step {{
+            font-size: 16px;
+            margin-bottom: 8px;
+        }}
+        
+        .progress-bar {{
+            width: 200px;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }}
+        
+        .progress-fill {{
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }}
+        
+        .render-progress {{
+            font-size: 14px;
+            color: #666;
         }}
 
         @keyframes spin {{
@@ -691,6 +819,13 @@ def get_editor_template(mode, filename, escaped_content, initial_html):
             <div id="preview">{initial_html}</div>
             <div class="loading-overlay" id="previewLoading" style="display: none;">
                 <div class="spinner"></div>
+                <div class="render-status">
+                    <div class="render-step" id="renderStep">Preparing render...</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="render-progress" id="renderProgress">0%</div>
+                </div>
             </div>
         </div>
     </div>
@@ -1097,6 +1232,33 @@ def get_editor_template(mode, filename, escaped_content, initial_html):
             }}
         }});
         
+        // Listen for render status updates
+        socket.on('render_status', function(data) {{
+            const overlay = document.getElementById('previewLoading');
+            const stepEl = document.getElementById('renderStep');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('renderProgress');
+            
+            if (data.step && data.progress !== undefined) {{
+                overlay.style.display = 'flex';
+                stepEl.textContent = data.step;
+                progressFill.style.width = data.progress + '%';
+                progressText.textContent = Math.round(data.progress) + '%';
+                
+                // Update main status bar too
+                updateStatusText(data.step + ' (' + Math.round(data.progress) + '%)');
+                
+                // Auto-hide when complete
+                if (data.progress >= 100) {{
+                    setTimeout(() => {{
+                        if (!isRendering) {{ // Only hide if not still rendering
+                            overlay.style.display = 'none';
+                        }}
+                    }}, 1000);
+                }}
+            }}
+        }});
+        
         // Mode switching
         document.getElementById('modeSelector').addEventListener('change', function(e) {{
             const newMode = e.target.value;
@@ -1143,7 +1305,16 @@ def get_editor_template(mode, filename, escaped_content, initial_html):
         function writeAndRun() {{
             if (!editor) return;
             const overlay = document.getElementById('previewLoading');
+            const stepEl = document.getElementById('renderStep');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('renderProgress');
+            
+            // Reset progress indicators
             overlay.style.display = 'flex';
+            stepEl.textContent = 'Saving & Rendering...';
+            progressFill.style.width = '0%';
+            progressText.textContent = '0%';
+            
             isRendering = true;
             updateStatusText('Saving & Rendering...');
             
@@ -1251,6 +1422,16 @@ def get_editor_template(mode, filename, escaped_content, initial_html):
             const displayContent = editor.getValue();
             const content = editor._createRawContent(displayContent);
             const exportBtn = document.getElementById('exportHtmlBtn');
+            const overlay = document.getElementById('previewLoading');
+            const stepEl = document.getElementById('renderStep');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('renderProgress');
+            
+            // Show progress for export
+            overlay.style.display = 'flex';
+            stepEl.textContent = 'Exporting to HTML...';
+            progressFill.style.width = '0%';
+            progressText.textContent = '0%';
             
             exportBtn.disabled = true;
             updateStatusText('Exporting to HTML...');
@@ -1296,6 +1477,7 @@ def get_editor_template(mode, filename, escaped_content, initial_html):
                 updateStatusText('Export error: ' + error.message);
             }})
             .finally(() => {{
+                overlay.style.display = 'none';
                 exportBtn.disabled = false;
             }});
         }}
@@ -1307,6 +1489,16 @@ def get_editor_template(mode, filename, escaped_content, initial_html):
             const displayContent = editor.getValue();
             const content = editor._createRawContent(displayContent);
             const exportBtn = document.getElementById('exportMdBtn');
+            const overlay = document.getElementById('previewLoading');
+            const stepEl = document.getElementById('renderStep');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('renderProgress');
+            
+            // Show progress for export
+            overlay.style.display = 'flex';
+            stepEl.textContent = 'Exporting to Markdown...';
+            progressFill.style.width = '0%';
+            progressText.textContent = '0%';
             
             exportBtn.disabled = true;
             updateStatusText('Exporting to Markdown...');
@@ -1352,6 +1544,7 @@ def get_editor_template(mode, filename, escaped_content, initial_html):
                 updateStatusText('Export error: ' + error.message);
             }})
             .finally(() => {{
+                overlay.style.display = 'none';
                 exportBtn.disabled = false;
             }});
         }}
@@ -1404,7 +1597,16 @@ def get_editor_template(mode, filename, escaped_content, initial_html):
             const displayContent = editor.getValue();
             const content = editor._createRawContent(displayContent);
             const overlay = document.getElementById('previewLoading');
+            const stepEl = document.getElementById('renderStep');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('renderProgress');
+            
+            // Reset progress indicators
             overlay.style.display = 'flex';
+            stepEl.textContent = 'Rendering...';
+            progressFill.style.width = '0%';
+            progressText.textContent = '0%';
+            
             updateStatusText('Rendering...');
             
             fetch('/api/render', {{
