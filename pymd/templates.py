@@ -899,7 +899,7 @@ def get_editor_template(mode, filename, escaped_content, initial_html):
                 setTimeout(updateCodeBlockBackgrounds, 100);
             }});
             
-            // Create custom content transformer to hide # prefixes
+            // Create custom content transformer to hide # prefixes and import pymd
             function createDisplayContent(rawContent) {{
                 const lines = rawContent.split('\\n');
                 const displayLines = [];
@@ -907,6 +907,11 @@ def get_editor_template(mode, filename, escaped_content, initial_html):
                 
                 for (let i = 0; i < lines.length; i++) {{
                     const line = lines[i];
+                    
+                    // Skip import pymd lines (should exist in file but not in editor)
+                    if (line.trim() === 'import pymd') {{
+                        continue;
+                    }}
                     
                     // Check for code block markers
                     if (line.match(/^#\s*```[`]*\s*$/)) {{
@@ -932,6 +937,28 @@ def get_editor_template(mode, filename, escaped_content, initial_html):
                 const lines = displayContent.split('\\n');
                 const rawLines = [];
                 let inCodeBlock = false;
+                let hasExecutableContent = false;
+                
+                // First pass: check if file has executable content (code blocks or standalone Python code)
+                let tempInCodeBlock = false;
+                for (let i = 0; i < lines.length; i++) {{
+                    const line = lines[i];
+                    if (line.match(/^```[`]*\s*$/)) {{
+                        tempInCodeBlock = !tempInCodeBlock;
+                        hasExecutableContent = true;
+                    }} else if (tempInCodeBlock) {{
+                        hasExecutableContent = true;
+                    }} else if (line.match(/^\s*(import|from|def|class|if|for|while|try|except|with|return|print)/) ||
+                               line.match(/^\s*[a-zA-Z_][a-zA-Z0-9_]*\s*=/) ||
+                               line.match(/^\s*[\[\](){{}}"']/)) {{
+                        hasExecutableContent = true;
+                    }}
+                }}
+                
+                // Add import pymd at the beginning if file has executable content
+                if (hasExecutableContent) {{
+                    rawLines.push('import pymd');
+                }}
                 
                 for (let i = 0; i < lines.length; i++) {{
                     const line = lines[i];

@@ -276,6 +276,11 @@ class PyMDRenderer:
                 i += 1
                 continue
 
+            # Skip import pymd lines (should exist in file but not be rendered)
+            if stripped_line == 'import pymd':
+                i += 1
+                continue
+
             # Handle code blocks with ``` (only non-prefixed)
             if stripped_line == '```':
                 i += 1  # Skip the opening ```
