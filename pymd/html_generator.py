@@ -2,18 +2,39 @@
 HTML generation and template utilities for PyMD renderer
 """
 
+import os
+from pathlib import Path
 from typing import List, Dict, Any
 
 
 class HtmlGenerator:
     """Handles HTML generation and template rendering"""
-    
+
     def __init__(self):
-        pass
-    
+        # Get path to static CSS file
+        self.static_dir = Path(__file__).parent / "static"
+        self.css_file = self.static_dir / "css" / "pymd.css"
+
+    def _load_css(self) -> str:
+        """Load CSS from external file"""
+        if self.css_file.exists():
+            with open(self.css_file, 'r') as f:
+                return f.read()
+        return ""
+
+    def _load_js(self) -> str:
+        """Load JavaScript from external file"""
+        js_file = self.static_dir / "js" / "dark-mode.js"
+        if js_file.exists():
+            with open(js_file, 'r') as f:
+                return f.read()
+        return ""
+
     def generate_html(self, elements: List[Dict[str, Any]]) -> str:
         """Generate complete HTML document"""
         content = '\n'.join(element['html'] for element in elements)
+        css_content = self._load_css()
+        js_content = self._load_js()
 
         html_template = f"""
 <!DOCTYPE html>
@@ -22,233 +43,37 @@ class HtmlGenerator:
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PyMD Document</title>
+
+    <!-- MathJax for LaTeX support -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>
+        window.MathJax = {{
+            tex: {{
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true,
+                processEnvironments: true
+            }},
+            options: {{
+                skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+            }}
+        }};
+    </script>
+
     <style>
-        body {{
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
-            line-height: 1.6;
-            color: #1a1a1a;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #fafafa;
-        }}
-        
-        h1, h2, h3, h4, h5, h6 {{
-            margin-top: 24px;
-            margin-bottom: 16px;
-            font-weight: 600;
-            line-height: 1.25;
-            color: #1a1a1a;
-        }}
-        
-        h1 {{
-            font-size: 2em;
-            border-bottom: 1px solid #eaecef;
-            padding-bottom: 10px;
-        }}
-        
-        h2 {{
-            font-size: 1.5em;
-            border-bottom: 1px solid #eaecef;
-            padding-bottom: 8px;
-        }}
-        
-        h3 {{
-            font-size: 1.25em;
-        }}
-        
-        p {{
-            margin-bottom: 16px;
-            color: #1a1a1a;
-        }}
-        
-        strong {{
-            font-weight: 600;
-            color: #333;
-        }}
-        
-        pre {{
-            background-color: #e8e8e8;
-            border-radius: 6px;
-            padding: 16px;
-            overflow: auto;
-            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
-            font-size: 14px;
-            line-height: 1.45;
-        }}
-        
-        code {{
-            background-color: #e8e8e8;
-            border-radius: 3px;
-            padding: 2px 4px;
-            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
-            font-size: 85%;
-        }}
-        
-        .image-container {{
-            margin: 20px 0;
-            text-align: center;
-        }}
-        
-        .image-caption {{
-            font-style: italic;
-            color: #666;
-            margin-top: 8px;
-        }}
-        
-        .video-container {{
-            margin: 20px 0;
-            text-align: center;
-        }}
-        
-        .video-container video {{
-            max-width: 100%;
-            height: auto;
-            border-radius: 6px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }}
-        
-        .video-caption {{
-            font-style: italic;
-            color: #666;
-            margin-top: 8px;
-        }}
-        
-        .pymd-table {{
-            border-collapse: collapse;
-            width: 100%;
-            margin: 20px 0;
-        }}
-        
-        .pymd-table th,
-        .pymd-table td {{
-            border: 1px solid #ddd;
-            padding: 8px 12px;
-            text-align: left;
-        }}
-        
-        .pymd-table th {{
-            background-color: #f6f8fa;
-            font-weight: 600;
-        }}
-        
-        .pymd-table tr:nth-child(even) {{
-            background-color: #f9f9f9;
-        }}
-        
-        .error {{
-            background-color: #ffeaea;
-            border: 1px solid #ff6b6b;
-            border-radius: 6px;
-            padding: 16px;
-            color: #d63031;
-            margin: 16px 0;
-        }}
-        
-        .data-output {{
-            background-color: #f0f8ff;
-            border: 1px solid #b0c4de;
-            border-radius: 6px;
-            padding: 16px;
-            margin: 16px 0;
-        }}
-        
-        .code-output {{
-            background-color: #f8f9fa;
-            border: 1px solid #e9ecef;
-            border-radius: 6px;
-            padding: 16px;
-            margin: 16px 0;
-            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
-            font-size: 14px;
-            line-height: 1.45;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }}
-        
-        .display-code {{
-            background-color: #e8e8e8;
-            border: 1px solid #d0d0d0;
-            border-radius: 6px;
-            padding: 16px;
-            margin: 16px 0;
-            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
-            font-size: 14px;
-            line-height: 1.45;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            color: #333;
-        }}
-        
-        ul, ol {{
-            margin: 16px 0;
-            padding-left: 0;
-            list-style: none;
-        }}
-        
-        ul li, ol li {{
-            margin: 8px 0;
-            padding: 4px 0 4px 28px;
-            line-height: 1.6;
-            position: relative;
-            color: #1a1a1a;
-        }}
-        
-        ul li::before {{
-            content: "•";
-            color: #666;
-            font-size: 16px;
-            font-weight: bold;
-            position: absolute;
-            left: 12px;
-            top: 4px;
-        }}
-        
-        ol {{
-            counter-reset: list-counter;
-        }}
-        
-        ol li {{
-            counter-increment: list-counter;
-        }}
-        
-        ol li::before {{
-            content: counter(list-counter) ".";
-            color: #666;
-            font-weight: 600;
-            position: absolute;
-            left: 8px;
-            top: 4px;
-            font-size: 14px;
-        }}
-        
-        ul li:hover, ol li:hover {{
-            background-color: #f8f9fa;
-            border-radius: 4px;
-            transition: background-color 0.2s ease;
-        }}
-        
-        /* Nested lists */
-        ul ul, ol ol, ul ol, ol ul {{
-            margin: 4px 0;
-            padding-left: 20px;
-        }}
-        
-        ul ul li::before {{
-            content: "◦";
-            font-size: 14px;
-        }}
-        
-        ul ul ul li::before {{
-            content: "▪";
-            font-size: 12px;
-        }}
+{css_content}
     </style>
 </head>
 <body>
     <div class="pymd-content">
         {content}
     </div>
+
+    <!-- Dark mode toggle script -->
+    <script>
+{js_content}
+    </script>
 </body>
 </html>
         """

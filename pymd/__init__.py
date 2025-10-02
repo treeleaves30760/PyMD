@@ -6,7 +6,7 @@ with the full power of Python. Write documents with executable code,
 dynamic content, and beautiful visualizations that update in real-time!
 """
 
-__version__ = "0.1.0"
+__version__ = "0.1.8"
 __author__ = "PyExecMD Team"
 __description__ = "Python-Powered Markdown with executable code and dynamic content"
 

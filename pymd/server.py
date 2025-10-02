@@ -25,7 +25,8 @@ class PyMDServer:
         self.port = port
         self.host = host
         self.app = Flask(__name__)
-        self.app.config['SECRET_KEY'] = 'pymd_secret_key'
+        # Use environment variable for secret key, fallback to os.urandom for development
+        self.app.config['SECRET_KEY'] = os.environ.get('PYMD_SECRET_KEY', os.urandom(24).hex())
         self.socketio = SocketIO(self.app, cors_allowed_origins="*")
         
         # Set output directory based on the file location

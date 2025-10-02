@@ -48,6 +48,8 @@ dev = [
     "black",
     "flake8",
     "mypy",
+    "isort",
+    "pre-commit",
 ]
 
 [project.urls]
@@ -72,3 +74,13 @@ target-version = ['py38']
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py", "*_test.py"]
+addopts = "--cov=pymd --cov-report=html --cov-report=term-missing --cov-report=xml"
+
+[tool.coverage.run]
+source = ["pymd"]
+omit = ["*/tests/*", "*/test_*", "*/__pycache__/*"]
+
+[tool.coverage.report]
+precision = 2
+show_missing = true
+skip_covered = false

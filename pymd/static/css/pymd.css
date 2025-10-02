@@ -1,0 +1,316 @@
+/* PyMD Default Stylesheet */
+
+:root {
+    --pymd-bg: #fafafa;
+    --pymd-text: #1a1a1a;
+    --pymd-text-secondary: #666;
+    --pymd-border: #eaecef;
+    --pymd-code-bg: #e8e8e8;
+    --pymd-code-border: #d0d0d0;
+    --pymd-table-header-bg: #f6f8fa;
+    --pymd-table-row-even: #f9f9f9;
+    --pymd-error-bg: #ffeaea;
+    --pymd-error-border: #ff6b6b;
+    --pymd-error-text: #d63031;
+    --pymd-data-bg: #f0f8ff;
+    --pymd-data-border: #b0c4de;
+    --pymd-hover-bg: #f8f9fa;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    color: var(--pymd-text);
+    margin: 0 auto;
+    background-color: var(--pymd-bg);
+}
+
+/* Headers */
+h1, h2, h3, h4, h5, h6 {
+    margin-top: 24px;
+    margin-bottom: 16px;
+    font-weight: 600;
+    line-height: 1.25;
+    color: var(--pymd-text);
+}
+
+h1 {
+    font-size: 2em;
+    border-bottom: 1px solid var(--pymd-border);
+    padding-bottom: 10px;
+}
+
+h2 {
+    font-size: 1.5em;
+    border-bottom: 1px solid var(--pymd-border);
+    padding-bottom: 8px;
+}
+
+h3 {
+    font-size: 1.25em;
+}
+
+/* Paragraphs and Text */
+p {
+    margin-bottom: 16px;
+    color: var(--pymd-text);
+}
+
+strong {
+    font-weight: 600;
+    color: #333;
+}
+
+/* Code */
+pre {
+    background-color: var(--pymd-code-bg);
+    border-radius: 6px;
+    padding: 16px;
+    overflow: auto;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-size: 14px;
+    line-height: 1.45;
+}
+
+code {
+    background-color: var(--pymd-code-bg);
+    border-radius: 3px;
+    padding: 2px 4px;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-size: 85%;
+}
+
+/* Images */
+.image-container {
+    margin: 20px 0;
+    text-align: center;
+}
+
+.image-caption {
+    font-style: italic;
+    color: var(--pymd-text-secondary);
+    margin-top: 8px;
+}
+
+/* Videos */
+.video-container {
+    margin: 20px 0;
+    text-align: center;
+}
+
+.video-container video {
+    max-width: 100%;
+    height: auto;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.video-caption {
+    font-style: italic;
+    color: var(--pymd-text-secondary);
+    margin-top: 8px;
+}
+
+/* Tables */
+.pymd-table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 20px 0;
+}
+
+.pymd-table th,
+.pymd-table td {
+    border: 1px solid #ddd;
+    padding: 8px 12px;
+    text-align: left;
+}
+
+.pymd-table th {
+    background-color: var(--pymd-table-header-bg);
+    font-weight: 600;
+}
+
+.pymd-table tr:nth-child(even) {
+    background-color: var(--pymd-table-row-even);
+}
+
+/* Error Messages */
+.error {
+    background-color: var(--pymd-error-bg);
+    border: 1px solid var(--pymd-error-border);
+    border-radius: 6px;
+    padding: 16px;
+    color: var(--pymd-error-text);
+    margin: 16px 0;
+}
+
+/* Data Output */
+.data-output {
+    background-color: var(--pymd-data-bg);
+    border: 1px solid var(--pymd-data-border);
+    border-radius: 6px;
+    padding: 16px;
+    margin: 16px 0;
+}
+
+/* Code Output */
+.code-output {
+    background-color: var(--pymd-hover-bg);
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    padding: 16px;
+    margin: 16px 0;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-size: 14px;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+/* Display Code */
+.display-code {
+    background-color: var(--pymd-code-bg);
+    border: 1px solid var(--pymd-code-border);
+    border-radius: 6px;
+    padding: 16px;
+    margin: 16px 0;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-size: 14px;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    color: #333;
+}
+
+/* Lists */
+ul, ol {
+    margin: 16px 0;
+    padding-left: 0;
+    list-style: none;
+}
+
+ul li, ol li {
+    margin: 8px 0;
+    padding: 4px 0 4px 28px;
+    line-height: 1.6;
+    position: relative;
+    color: var(--pymd-text);
+}
+
+ul li::before {
+    content: "•";
+    color: var(--pymd-text-secondary);
+    font-size: 16px;
+    font-weight: bold;
+    position: absolute;
+    left: 12px;
+    top: 4px;
+}
+
+ol {
+    counter-reset: list-counter;
+}
+
+ol li {
+    counter-increment: list-counter;
+}
+
+ol li::before {
+    content: counter(list-counter) ".";
+    color: var(--pymd-text-secondary);
+    font-weight: 600;
+    position: absolute;
+    left: 8px;
+    top: 4px;
+    font-size: 14px;
+}
+
+ul li:hover, ol li:hover {
+    background-color: var(--pymd-hover-bg);
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+}
+
+/* Nested lists */
+ul ul, ol ol, ul ol, ol ul {
+    margin: 4px 0;
+    padding-left: 20px;
+}
+
+ul ul li::before {
+    content: "◦";
+    font-size: 14px;
+}
+
+ul ul ul li::before {
+    content: "▪";
+    font-size: 12px;
+}
+
+/* Dark mode theme */
+[data-theme="dark"] {
+    --pymd-bg: #1a1a1a;
+    --pymd-text: #e0e0e0;
+    --pymd-text-secondary: #999;
+    --pymd-border: #333;
+    --pymd-code-bg: #2d2d2d;
+    --pymd-code-border: #444;
+    --pymd-table-header-bg: #2a2a2a;
+    --pymd-table-row-even: #242424;
+    --pymd-hover-bg: #2a2a2a;
+    --pymd-error-bg: #3d1f1f;
+    --pymd-error-border: #8b3a3a;
+    --pymd-error-text: #ff6b6b;
+    --pymd-data-bg: #1a2b3d;
+    --pymd-data-border: #3a5a7a;
+}
+
+/* Auto dark mode based on system preference */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        --pymd-bg: #1a1a1a;
+        --pymd-text: #e0e0e0;
+        --pymd-text-secondary: #999;
+        --pymd-border: #333;
+        --pymd-code-bg: #2d2d2d;
+        --pymd-code-border: #444;
+        --pymd-table-header-bg: #2a2a2a;
+        --pymd-table-row-even: #242424;
+        --pymd-hover-bg: #2a2a2a;
+        --pymd-error-bg: #3d1f1f;
+        --pymd-error-border: #8b3a3a;
+        --pymd-error-text: #ff6b6b;
+        --pymd-data-bg: #1a2b3d;
+        --pymd-data-border: #3a5a7a;
+    }
+}
+
+/* Theme toggle button */
+.pymd-theme-toggle {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: 2px solid var(--pymd-border);
+    background-color: var(--pymd-bg);
+    color: var(--pymd-text);
+    font-size: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+    z-index: 1000;
+}
+
+.pymd-theme-toggle:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.pymd-theme-toggle:active {
+    transform: scale(0.95);
+}

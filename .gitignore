@@ -9,23 +9,57 @@ __pycache__/
 *.pyzw
 *.pyzwz
 *.pyzwzw
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
 
 # Build
 dist/
+build/
 *.egg-info/
+.eggs/
 
-# Publish
-publish.sh
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+*.cover
+.hypothesis/
 
-# .claude
+# IDEs
 .claude/
-
-# .cursor
 .cursor/
-
-# .vscode
 .vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
 
 # Rendered files
 videos/
 images/
+*.html
+*.pdf
+!pymd/static/**/*.html
+
+# Publish
+publish.sh
+
+# Temporary files
+*.tmp
+.temp/
+temp/

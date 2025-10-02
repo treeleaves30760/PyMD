@@ -207,6 +207,15 @@ my_project/
 - **📑 Business Reports**: Automated reports with data tables and charts that update when code runs
 - **🎨 Presentation Materials**: Technical presentations that combine code, explanation, live visualizations, and demo videos
 
+## 🔒 Security Considerations
+
+**⚠️ IMPORTANT: PyMD executes Python code in `.pymd` files.**
+
+- Only run `.pymd` files from trusted sources
+- Review code before executing downloaded `.pymd` files
+- Don't expose the PyMD server to public networks without authentication
+- See [SECURITY.md](SECURITY.md) for detailed security guidelines
+
 ## 🤝 Contributing
 
 We welcome contributions! Please feel free to submit issues, feature requests, or pull requests.

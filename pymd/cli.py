@@ -5,11 +5,16 @@ Render PyExecMD files to HTML and start live preview servers
 """
 
 import argparse
+import logging
 import os
 import sys
 import time
 from .renderer import PyMDRenderer
 from .server import PyMDServer
+from .logger import get_logger, set_log_level
+from .pdf_exporter import PDFExporter
+
+logger = get_logger("cli")
 
 
 def progress_callback(step: str, progress: float):
@@ -72,6 +77,35 @@ def render_command(args):
                     print(f"📷 Captured {len(renderer.captured_images)} image(s) in '{renderer.image_handler.images_dir}'")
             else:
                 print(markdown)
+        elif args.format == 'pdf':
+            # Render to PDF
+            with open(args.input, 'r', encoding='utf-8') as f:
+                content = f.read()
+
+            # First render to HTML
+            html = renderer.parse_and_render(content)
+
+            # Then convert to PDF
+            pdf_exporter = PDFExporter()
+
+            if not args.output:
+                print("Error: Output file (-o) is required for PDF export")
+                return 1
+
+            success = pdf_exporter.export_html_to_pdf(html, args.output)
+
+            if success:
+                status = renderer.get_status_info()
+                elapsed = time.time() - start_time
+                print(f"\n✅ Successfully rendered '{args.input}' to '{args.output}' (PDF)")
+                print(f"⏱️  Total time: {elapsed:.2f}s")
+                print(f"💾 Cache hits: {status['cache_hits']}, misses: {status['cache_misses']}")
+                if renderer.captured_images:
+                    print(f"📷 Captured {len(renderer.captured_images)} image(s) in '{renderer.image_handler.images_dir}'")
+                return 0
+            else:
+                print("\n" + pdf_exporter.get_install_instructions())
+                return 1
         else:
             # Render to HTML (default)
             html = renderer.render_file(args.input, args.output)
@@ -80,7 +114,7 @@ def render_command(args):
                 # Get final status info
                 status = renderer.get_status_info()
                 elapsed = time.time() - start_time
-                
+
                 print(f"\n✅ Successfully rendered '{args.input}' to '{args.output}' (HTML)")
                 print(f"⏱️  Total time: {elapsed:.2f}s")
                 print(f"💾 Cache hits: {status['cache_hits']}, misses: {status['cache_misses']}")
@@ -267,7 +301,7 @@ def main():
     render_parser.add_argument(
         '-o', '--output', help='Output file (default: print to stdout)')
     render_parser.add_argument(
-        '-f', '--format', choices=['html', 'markdown'], default='html',
+        '-f', '--format', choices=['html', 'markdown', 'pdf'], default='html',
         help='Output format (default: html)')
     render_parser.add_argument(
         '-q', '--quiet', action='store_true',
