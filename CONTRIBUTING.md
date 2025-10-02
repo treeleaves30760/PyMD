@@ -7,7 +7,7 @@ Thank you for your interest in contributing to PyMD! We welcome contributions fr
 1. **Fork and clone the repository**
 
 ```bash
-git clone https://github.com/YOUR-USERNAME/PyMD.git
+git clone https://github.com/treeleaves30760/PyMD.git
 cd PyMD
 ```
 
