@@ -214,14 +214,14 @@ my_project/
 - Only run `.pymd` files from trusted sources
 - Review code before executing downloaded `.pymd` files
 - Don't expose the PyMD server to public networks without authentication
-- See [SECURITY.md](SECURITY.md) for detailed security guidelines
+- See [SECURITY.md](./docs/SECURITY.md) for detailed security guidelines
 
 ## 🤝 Contributing
 
-We welcome contributions! Please feel free to submit issues, feature requests, or pull requests.
+We welcome contributions! Please feel free to submit issues, feature requests, or pull requests. Please refer to the [CONTRIBUTING.md](./docs/CONTRIBUTING.md)
 
 ## 📄 License
 
-This project is licensed under the MIT License.
+This project is licensed under the [MIT License](./docs/LICENSE).
 
 ---
