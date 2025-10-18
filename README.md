@@ -216,6 +216,41 @@ my_project/
 - Don't expose the PyMD server to public networks without authentication
 - See [SECURITY.md](./docs/SECURITY.md) for detailed security guidelines
 
+## 🌐 PyMD Web Platform (New!)
+
+PyMD now includes a multi-user web platform with real-time collaboration features!
+
+### Features
+- 🔐 **Secure Authentication** - Auth0 integration
+- 📝 **Document Management** - Create, edit, and organize your PyMD documents
+- 👥 **Multi-User Support** - Separate user accounts and permissions
+- ⚡ **Real-time Preview** - Live rendering as you type
+- 💾 **Auto-save** - Never lose your work
+- 🎨 **Modern UI** - Built with Next.js 15 and Tailwind CSS
+
+### Quick Start
+
+Get started in 5 minutes:
+
+```bash
+# 1. Clone and configure
+cp .env.example .env
+# Edit .env with your Auth0 credentials
+
+# 2. Start all services
+docker compose up --build
+
+# 3. Initialize database
+docker compose exec backend alembic upgrade head
+
+# 4. Open http://localhost:3000
+```
+
+For detailed setup instructions, see:
+- **[Quick Start Guide](./docs/QUICK_START.md)** - Get running in 5 minutes
+- **[Auth0 Setup Guide](./docs/AUTH0_SETUP_GUIDE.md)** - Complete Auth0 configuration
+- **[Phase 1 Documentation](./docs/README_PHASE1.md)** - Full Phase 1 features and setup
+
 ## 🤝 Contributing
 
 We welcome contributions! Please feel free to submit issues, feature requests, or pull requests. Please refer to the [CONTRIBUTING.md](./docs/CONTRIBUTING.md)

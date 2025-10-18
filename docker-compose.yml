@@ -1,0 +1,90 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: pymd-postgres
+    environment:
+      POSTGRES_DB: pymd
+      POSTGRES_USER: pymd
+      POSTGRES_PASSWORD: pymd_dev_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pymd"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pymd-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: pymd-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pymd-network
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: pymd-backend
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://pymd:pymd_dev_password@postgres:5432/pymd
+      REDIS_URL: redis://redis:6379/0
+      AUTH0_DOMAIN: ${AUTH0_DOMAIN}
+      AUTH0_CLIENT_ID: ${AUTH0_CLIENT_ID}
+      AUTH0_CLIENT_SECRET: ${AUTH0_CLIENT_SECRET}
+      DEBUG: "true"
+      CORS_ORIGINS: '["http://localhost:3000"]'
+      PYTHONPATH: /app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./pymd:/app/pymd
+    command: uvicorn pymd.backend.app.main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - pymd-network
+
+  frontend:
+    build:
+      context: ./pymd_frontend
+      dockerfile: Dockerfile.dev
+    container_name: pymd-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+      NEXT_PUBLIC_WS_URL: ws://localhost:8000
+      NEXT_PUBLIC_AUTH0_DOMAIN: ${NEXT_PUBLIC_AUTH0_DOMAIN}
+      NEXT_PUBLIC_AUTH0_CLIENT_ID: ${NEXT_PUBLIC_AUTH0_CLIENT_ID}
+    volumes:
+      - ./pymd_frontend:/app
+      - /app/node_modules
+      - /app/.next
+    command: pnpm dev
+    networks:
+      - pymd-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  pymd-network:
+    driver: bridge

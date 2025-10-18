@@ -66,4 +66,4 @@ temp/
 
 # env files
 *.env
-.env.local
+**/.env.local
