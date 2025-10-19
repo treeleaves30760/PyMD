@@ -14,15 +14,8 @@ const nextConfig = {
     NEXT_PUBLIC_WS_URL: process.env.NEXT_PUBLIC_WS_URL,
   },
 
-  async rewrites() {
-    const apiUrl = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-    return [
-      {
-        source: '/api/backend/:path*',
-        destination: `${apiUrl}/api/v1/:path*`,
-      },
-    ];
-  },
+  // Rewrites removed - using API route handler instead for proper authentication
+  // See /app/api/backend/[...path]/route.ts
 }
 
 module.exports = nextConfig

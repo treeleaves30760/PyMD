@@ -30,7 +30,7 @@ const authHandlers = handleAuth({
     async afterCallback(_req: any, session: any) {
       // Sync user with backend
       // Use internal Docker network URL for server-side requests
-      const backendUrl = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+      const backendUrl = process.env.API_URL || 'http://localhost:8000'
       if (backendUrl && session.user) {
         try {
           await fetch(`${backendUrl}/api/v1/auth/callback`, {

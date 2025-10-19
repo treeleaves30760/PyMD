@@ -6,12 +6,14 @@ import { useUser } from '@auth0/nextjs-auth0/client'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
+import { useCreateDocument } from '@/hooks/useDocuments'
 
 export default function NewDocumentPage() {
   const router = useRouter()
   const { user, isLoading } = useUser()
   const [title, setTitle] = useState('')
-  const [isCreating, setIsCreating] = useState(false)
+
+  const createDocument = useCreateDocument()
 
   if (isLoading) {
     return (
@@ -34,31 +36,17 @@ export default function NewDocumentPage() {
       return
     }
 
-    setIsCreating(true)
     try {
-      // TODO: Call backend API to create document
-      const response = await fetch('/api/backend/documents', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          title: title.trim(),
-          content: '# ' + title.trim() + '\n\nStart writing your PyMD document here...',
-        }),
+      const document = await createDocument.mutateAsync({
+        title: title.trim(),
+        content: `# ${title.trim()}\n\nStart writing your PyMD document here...\n\n\`\`\`python\n# You can add Python code blocks like this\nprint("Hello, PyMD!")\n\`\`\`\n`,
+        render_format: 'html',
       })
 
-      if (response.ok) {
-        const document = await response.json()
-        router.push(`/documents/${document.id}`)
-      } else {
-        throw new Error('Failed to create document')
-      }
+      router.push(`/documents/${document.id}`)
     } catch (error) {
       console.error('Error creating document:', error)
       alert('Failed to create document. Please try again.')
-    } finally {
-      setIsCreating(false)
     }
   }
 
@@ -100,10 +88,10 @@ export default function NewDocumentPage() {
           <div className="flex gap-4">
             <Button
               onClick={handleCreate}
-              disabled={isCreating || !title.trim()}
+              disabled={createDocument.isPending || !title.trim()}
               size="lg"
             >
-              {isCreating ? 'Creating...' : 'Create Document'}
+              {createDocument.isPending ? 'Creating...' : 'Create Document'}
             </Button>
             <Link href="/dashboard">
               <Button variant="outline" size="lg">

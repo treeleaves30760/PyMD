@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 from pymd.backend.app.config import settings
 from pymd.backend.app.core.database import init_db, close_db
 from pymd.backend.app.core.redis import init_redis, close_redis
-from pymd.backend.app.api.v1 import auth, users, health
+from pymd.backend.app.api.v1 import auth, users, health, documents, render
 
 
 @asynccontextmanager
@@ -61,6 +61,8 @@ async def add_security_headers(request, call_next):
 app.include_router(health.router, tags=["health"])
 app.include_router(auth.router, prefix=settings.API_V1_PREFIX, tags=["auth"])
 app.include_router(users.router, prefix=settings.API_V1_PREFIX, tags=["users"])
+app.include_router(documents.router, prefix=settings.API_V1_PREFIX, tags=["documents"])
+app.include_router(render.router, prefix=settings.API_V1_PREFIX, tags=["render"])
 
 
 @app.get("/")

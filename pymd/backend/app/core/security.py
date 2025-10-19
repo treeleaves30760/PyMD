@@ -1,14 +1,16 @@
 """Security utilities and JWT validation"""
 from typing import Dict, Optional
 from datetime import datetime, timedelta
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import jwt, JWTError
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 import httpx
 
 from pymd.backend.app.config import settings
 
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)  # Don't auto-error, we'll handle it
 
 
 class AuthMiddleware:
@@ -107,8 +109,33 @@ class AuthMiddleware:
 auth_middleware = AuthMiddleware()
 
 
-async def get_current_user(token_payload: Dict = Depends(auth_middleware.verify_token)) -> str:
-    """Get current user ID from verified token"""
+async def get_current_user(
+    request: Request,
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+) -> str:
+    """
+    Get current user ID from verified token or X-User-Sub header
+
+    Priority:
+    1. X-User-Sub header (from Next.js proxy) - for development/trusted proxy
+    2. JWT token (from Authorization header) - for direct API access
+    """
+    # Check for X-User-Sub header (from Next.js frontend proxy)
+    user_sub = request.headers.get("X-User-Sub")
+    if user_sub:
+        # For development, trust the X-User-Sub header from the frontend proxy
+        # In production, you should verify this comes from a trusted source
+        return user_sub
+
+    # Fall back to JWT validation
+    if not credentials:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="No authentication credentials provided",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    token_payload = await auth_middleware.verify_token(credentials)
     user_id = token_payload.get("sub")
     if not user_id:
         raise HTTPException(
@@ -116,6 +143,38 @@ async def get_current_user(token_payload: Dict = Depends(auth_middleware.verify_
             detail="Invalid token: missing subject",
         )
     return user_id
+
+
+async def get_current_user_object(
+    auth0_id: str = Depends(get_current_user),
+    db: AsyncSession = Depends(lambda: None),  # Will be provided by endpoint
+):
+    """
+    Get the User model object from the database
+    This requires importing models, so we do lazy import to avoid circular deps
+    """
+    from pymd.backend.app.models.user import User
+    from pymd.backend.app.core.database import get_db
+
+    # Get db session if not provided
+    if db is None:
+        async for session in get_db():
+            db = session
+            break
+
+    # Fetch user from database
+    result = await db.execute(
+        select(User).where(User.auth0_id == auth0_id)
+    )
+    user = result.scalar_one_or_none()
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found in database",
+        )
+
+    return user
 
 
 async def get_optional_current_user(
