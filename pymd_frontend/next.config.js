@@ -1,7 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  swcMinify: true,
   output: 'standalone',
 
   experimental: {
@@ -16,10 +15,11 @@ const nextConfig = {
   },
 
   async rewrites() {
+    const apiUrl = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
     return [
       {
-        source: '/api/:path*',
-        destination: `${process.env.NEXT_PUBLIC_API_URL}/:path*`,
+        source: '/api/backend/:path*',
+        destination: `${apiUrl}/api/v1/:path*`,
       },
     ];
   },

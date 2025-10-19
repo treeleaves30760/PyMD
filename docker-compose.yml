@@ -73,11 +73,14 @@ services:
       NEXT_PUBLIC_WS_URL: ws://localhost:8000
       NEXT_PUBLIC_AUTH0_DOMAIN: ${NEXT_PUBLIC_AUTH0_DOMAIN}
       NEXT_PUBLIC_AUTH0_CLIENT_ID: ${NEXT_PUBLIC_AUTH0_CLIENT_ID}
+      API_URL: http://backend:8000
     volumes:
       - ./pymd_frontend:/app
       - /app/node_modules
       - /app/.next
     command: pnpm dev
+    depends_on:
+      - backend
     networks:
       - pymd-network
 
