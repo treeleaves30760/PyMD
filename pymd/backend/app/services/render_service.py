@@ -48,7 +48,10 @@ class RenderService:
             cache_key = RenderService._compute_cache_key(content, format)
             cached_result = await redis.get(cache_key)
             if cached_result:
-                return cached_result.decode("utf-8"), True
+                # Handle both bytes and string responses from Redis
+                if isinstance(cached_result, bytes):
+                    return cached_result.decode("utf-8"), True
+                return cached_result, True
 
         # Render using PyMD CLI
         try:

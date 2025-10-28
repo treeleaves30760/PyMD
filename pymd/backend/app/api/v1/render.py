@@ -27,7 +27,7 @@ router = APIRouter(prefix="/render", tags=["render"])
 )
 async def render_content(
     request: RenderRequest,
-    current_user: User = Depends(get_current_user),
+    current_user_id: str = Depends(get_current_user),
     redis = Depends(get_redis),
 ):
     """
@@ -61,7 +61,7 @@ async def render_content(
 )
 async def preview_render(
     request: RenderRequest,
-    current_user: User = Depends(get_current_user),
+    current_user_id: str = Depends(get_current_user),
     redis = Depends(get_redis),
 ):
     """
