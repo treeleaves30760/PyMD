@@ -4,6 +4,7 @@ import { persist } from 'zustand/middleware'
 type ViewMode = 'grid' | 'list'
 type SortBy = 'updated_at' | 'created_at' | 'title'
 type SortOrder = 'asc' | 'desc'
+type Theme = 'light' | 'dark'
 
 interface UIState {
   // Document list view mode
@@ -15,6 +16,8 @@ interface UIState {
   searchQuery: string
   // Sidebar collapsed state
   sidebarCollapsed: boolean
+  // Theme
+  theme: Theme
   // Editor settings
   editorSettings: {
     fontSize: number
@@ -31,6 +34,8 @@ interface UIState {
   setSortOrder: (order: SortOrder) => void
   setSearchQuery: (query: string) => void
   toggleSidebar: () => void
+  setTheme: (theme: Theme) => void
+  toggleTheme: () => void
   updateEditorSettings: (settings: Partial<UIState['editorSettings']>) => void
   reset: () => void
 }
@@ -41,6 +46,7 @@ const initialState = {
   sortOrder: 'desc' as SortOrder,
   searchQuery: '',
   sidebarCollapsed: false,
+  theme: 'light' as Theme,
   editorSettings: {
     fontSize: 14,
     lineHeight: 1.6,
@@ -65,6 +71,10 @@ export const useUIStore = create<UIState>()(
       setSearchQuery: (query) => set({ searchQuery: query }),
 
       toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
+
+      setTheme: (theme) => set({ theme }),
+
+      toggleTheme: () => set((state) => ({ theme: state.theme === 'light' ? 'dark' : 'light' })),
 
       updateEditorSettings: (settings) =>
         set((state) => ({

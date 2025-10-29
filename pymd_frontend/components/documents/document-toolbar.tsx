@@ -3,6 +3,7 @@
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { useEditorStore } from '@/stores/editorStore'
+import { useUIStore } from '@/stores/uiStore'
 import {
   Save,
   Download,
@@ -12,6 +13,8 @@ import {
   Minimize,
   FileText,
   Settings,
+  Sun,
+  Moon,
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -41,6 +44,7 @@ export function DocumentToolbar({
     toggleFullScreen,
     togglePreview,
   } = useEditorStore()
+  const { theme, toggleTheme } = useUIStore()
 
   return (
     <div className="flex h-14 items-center justify-between border-b bg-background px-4">
@@ -86,6 +90,19 @@ export function DocumentToolbar({
             <Minimize className="h-4 w-4" />
           ) : (
             <Maximize className="h-4 w-4" />
+          )}
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={toggleTheme}
+          title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+        >
+          {theme === 'light' ? (
+            <Moon className="h-4 w-4" />
+          ) : (
+            <Sun className="h-4 w-4" />
           )}
         </Button>
 

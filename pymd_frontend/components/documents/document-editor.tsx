@@ -15,8 +15,47 @@ interface DocumentEditorProps {
 
 export function DocumentEditor({ value, onChange, readOnly = false }: DocumentEditorProps) {
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null)
+  const decorationsRef = useRef<string[]>([])
   const { setCursorPosition, updateCounts, setContent } = useEditorStore()
-  const { editorSettings } = useUIStore()
+  const { editorSettings, theme } = useUIStore()
+
+  // Function to update code block backgrounds
+  const updateCodeBlockBackgrounds = useCallback((editor: monaco.editor.IStandaloneCodeEditor) => {
+    const model = editor.getModel()
+    if (!model) return
+
+    const newDecorations: monaco.editor.IModelDeltaDecoration[] = []
+    const lines = model.getLinesContent()
+    let inCodeBlock = false
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim()
+
+      // Check for code block start/end (```)
+      if (line === '```' || line.startsWith('```')) {
+        inCodeBlock = !inCodeBlock
+        // Add decoration to the fence line itself
+        newDecorations.push({
+          range: new monaco.Range(i + 1, 1, i + 1, 1),
+          options: {
+            isWholeLine: true,
+            className: 'execution-code-line',
+          },
+        })
+      } else if (inCodeBlock) {
+        // Lines inside code blocks get gray background
+        newDecorations.push({
+          range: new monaco.Range(i + 1, 1, i + 1, 1),
+          options: {
+            isWholeLine: true,
+            className: 'execution-code-line',
+          },
+        })
+      }
+    }
+
+    decorationsRef.current = editor.deltaDecorations(decorationsRef.current, newDecorations)
+  }, [])
 
   const handleEditorDidMount: OnMount = useCallback((editor, monaco) => {
     editorRef.current = editor
@@ -62,8 +101,12 @@ export function DocumentEditor({ value, onChange, readOnly = false }: DocumentEd
       const wordCount = content.trim().split(/\s+/).filter(Boolean).length
       const charCount = content.length
       updateCounts(wordCount, charCount)
+      updateCodeBlockBackgrounds(editor)
     })
-  }, [setCursorPosition, updateCounts])
+
+    // Initial background update
+    setTimeout(() => updateCodeBlockBackgrounds(editor), 100)
+  }, [setCursorPosition, updateCounts, updateCodeBlockBackgrounds])
 
   const handleChange = useCallback((value: string | undefined) => {
     const newValue = value || ''
@@ -85,6 +128,16 @@ export function DocumentEditor({ value, onChange, readOnly = false }: DocumentEd
     }
   }, [editorSettings])
 
+  // Apply theme when it changes
+  useEffect(() => {
+    if (editorRef.current) {
+      const monacoTheme = theme === 'light' ? 'vs' : 'vs-dark'
+      editorRef.current.updateOptions({
+        theme: monacoTheme,
+      })
+    }
+  }, [theme])
+
   return (
     <div className="h-full w-full">
       <Editor
@@ -94,7 +147,7 @@ export function DocumentEditor({ value, onChange, readOnly = false }: DocumentEd
         value={value}
         onChange={handleChange}
         onMount={handleEditorDidMount}
-        theme="vs-dark"
+        theme={theme === 'light' ? 'vs' : 'vs-dark'}
         options={{
           readOnly,
           fontSize: editorSettings.fontSize,

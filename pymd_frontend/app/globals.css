@@ -5,47 +5,61 @@
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 0 0% 0%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 0 0% 0%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 0 0% 0%;
     --primary: 222.2 47.4% 11.2%;
     --primary-foreground: 210 40% 98%;
     --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary-foreground: 0 0% 0%;
     --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted-foreground: 0 0% 55%;
     --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent-foreground: 0 0% 0%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
     --radius: 0.5rem;
+
+    /* Preview panel colors */
+    --preview-bg: 0 0% 100%;
+    --preview-text: 0 0% 0%;
+    --preview-code-bg: 0 0% 91%;
+    --preview-heading: 0 0% 0%;
+    --preview-link: 220 90% 56%;
   }
 
   .dark {
     --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --foreground: 0 0% 100%;
     --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card-foreground: 0 0% 100%;
     --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover-foreground: 0 0% 100%;
     --primary: 210 40% 98%;
     --primary-foreground: 222.2 47.4% 11.2%;
     --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary-foreground: 0 0% 100%;
     --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted-foreground: 0 0% 60%;
     --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent-foreground: 0 0% 100%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
+
+    /* Preview panel colors */
+    --preview-bg: 0 0% 12%;
+    --preview-text: 0 0% 100%;
+    --preview-code-bg: 0 0% 18%;
+    --preview-heading: 0 0% 100%;
+    --preview-link: 210 100% 66%;
   }
 }
 
@@ -56,4 +70,93 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Monaco Editor custom styling for code blocks */
+.execution-code-line {
+  background-color: rgba(128, 128, 128, 0.15) !important;
+}
+
+.display-code-line {
+  background-color: rgba(250, 250, 250, 0.8) !important;
+}
+
+/* Global preview panel styling using CSS variables */
+.preview-panel {
+  background-color: hsl(var(--preview-bg));
+  color: hsl(var(--preview-text));
+}
+
+/* Prose styling for all content */
+.prose {
+  color: hsl(var(--preview-text));
+}
+
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4,
+.prose h5,
+.prose h6 {
+  color: hsl(var(--preview-heading));
+}
+
+.prose p,
+.prose ul,
+.prose ol,
+.prose li,
+.prose span,
+.prose div,
+.prose td,
+.prose th,
+.prose strong {
+  color: hsl(var(--preview-text));
+}
+
+.prose pre {
+  background-color: hsl(var(--preview-code-bg)) !important;
+  color: hsl(var(--preview-text));
+}
+
+.prose code {
+  background-color: hsl(var(--preview-code-bg)) !important;
+  color: hsl(var(--preview-text));
+}
+
+.prose pre code {
+  background-color: transparent !important;
+}
+
+.prose a {
+  color: hsl(var(--preview-link));
+}
+
+.prose a:hover {
+  opacity: 0.8;
+}
+
+/* Dark mode specific adjustments */
+.dark .prose h1,
+.dark .prose h2 {
+  border-color: hsl(0 0% 25%);
+}
+
+.dark .prose pre,
+.dark .prose code {
+  border: 1px solid hsl(0 0% 25%);
+}
+
+.dark .prose blockquote {
+  color: hsl(0 0% 78%);
+  border-left-color: hsl(0 0% 25%);
+}
+
+.dark .prose table,
+.dark .prose thead,
+.dark .prose tbody tr {
+  border-color: hsl(0 0% 25%);
+}
+
+.dark .prose tbody tr:nth-child(even) {
+  background-color: hsl(0 0% 15%);
 }

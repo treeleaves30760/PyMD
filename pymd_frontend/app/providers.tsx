@@ -2,6 +2,7 @@
 
 import { UserProvider } from '@auth0/nextjs-auth0/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { ThemeProvider } from '@/components/providers/theme-provider'
 import { useState } from 'react'
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -20,7 +21,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <UserProvider>
       <QueryClientProvider client={queryClient}>
-        {children}
+        <ThemeProvider>
+          {children}
+        </ThemeProvider>
       </QueryClientProvider>
     </UserProvider>
   )

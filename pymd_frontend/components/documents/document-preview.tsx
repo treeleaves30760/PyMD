@@ -31,7 +31,7 @@ export function DocumentPreview({ content }: DocumentPreviewProps) {
 
   if (isPending) {
     return (
-      <div className="flex h-full items-center justify-center">
+      <div className="preview-panel flex h-full items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     )
@@ -39,7 +39,7 @@ export function DocumentPreview({ content }: DocumentPreviewProps) {
 
   if (error) {
     return (
-      <div className="p-4">
+      <div className="preview-panel p-4 h-full">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Preview Error</AlertTitle>
@@ -53,16 +53,16 @@ export function DocumentPreview({ content }: DocumentPreviewProps) {
 
   if (!data?.rendered) {
     return (
-      <div className="flex h-full items-center justify-center text-muted-foreground">
-        <p>Start typing to see preview...</p>
+      <div className="preview-panel flex h-full items-center justify-center">
+        <p className="text-muted-foreground">Start typing to see preview...</p>
       </div>
     )
   }
 
   return (
-    <div className="h-full overflow-auto">
+    <div className="preview-panel h-full overflow-auto">
       <div
-        className="prose prose-slate dark:prose-invert max-w-none p-6"
+        className="prose max-w-none p-6"
         dangerouslySetInnerHTML={{ __html: data.rendered }}
       />
     </div>
