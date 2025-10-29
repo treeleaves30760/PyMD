@@ -26,6 +26,10 @@ email-validator==2.1.0
 # HTTP Client
 httpx==0.26.0
 
+# Docker
+docker==6.1.3  # Version with better urllib3 compatibility
+urllib3<2.0.0  # For Docker compatibility
+
 # Rate Limiting
 slowapi==0.1.9
 

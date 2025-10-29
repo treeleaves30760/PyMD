@@ -5,6 +5,7 @@ This service manages Docker containers for executing user code in isolated envir
 import docker
 import json
 import logging
+import os
 from typing import Optional, Dict, Any, Tuple
 from datetime import datetime
 import uuid
@@ -19,12 +20,65 @@ class DockerExecutorService:
 
     def __init__(self):
         """Initialize Docker client"""
+        self.client: Optional[docker.DockerClient] = None
+        self.available: bool = False
+
+        if not getattr(settings, "DOCKER_ENABLED", True):
+            logger.warning("Docker integration disabled via configuration")
+            return
+
+        base_url = self._resolve_base_url()
+
         try:
-            self.client = docker.from_env()
-            logger.info("Docker client initialized successfully")
+            self.client = docker.DockerClient(base_url=base_url)
+            # Test connection
+            self.client.ping()
+            self.available = True
+            logger.info(f"Docker client initialized successfully using {base_url}")
         except docker.errors.DockerException as e:
             logger.error(f"Failed to initialize Docker client: {e}")
-            raise RuntimeError(f"Docker is not available: {e}")
+            self.client = None
+            self.available = False
+        except Exception as e:
+            logger.exception(f"Unexpected error while initializing Docker client: {e}")
+            self.client = None
+            self.available = False
+
+    def _resolve_base_url(self) -> str:
+        """
+        Determine the Docker base URL from settings or environment variables.
+
+        Returns:
+            Docker connection string
+        """
+        # Preference order: settings override -> env var -> default socket
+        configured_host = getattr(settings, "DOCKER_HOST_OVERRIDE", None)
+        if configured_host:
+            candidate = configured_host
+        else:
+            candidate = os.environ.get("DOCKER_HOST", "unix:///var/run/docker.sock")
+
+        # Some environments expose Docker contexts as http+docker without the unix adapter.
+        # Fallback to the standard Unix socket when that happens.
+        if candidate.startswith("http+docker://"):
+            context_key = candidate[len("http+docker://"):].strip("/")
+            if context_key in ("localunixsocket", "localhost"):
+                return "unix:///var/run/docker.sock"
+
+        return candidate
+
+    def _ensure_available(self) -> bool:
+        """
+        Check whether the Docker client is available.
+
+        Returns:
+            True if Docker operations can be performed, False otherwise.
+        """
+        if self.client and self.available:
+            return True
+
+        logger.error("Docker client is not available")
+        return False
 
     def _get_resource_limits(self, tier: str = "free") -> Dict[str, Any]:
         """
@@ -59,6 +113,9 @@ class DockerExecutorService:
         Returns:
             True if successful, False otherwise
         """
+        if not self._ensure_available():
+            return False
+
         try:
             self.client.volumes.create(
                 name=volume_name,
@@ -87,6 +144,9 @@ class DockerExecutorService:
         Returns:
             True if successful, False otherwise
         """
+        if not self._ensure_available():
+            return False
+
         try:
             volume = self.client.volumes.get(volume_name)
             volume.remove()
@@ -109,6 +169,9 @@ class DockerExecutorService:
         Returns:
             True if volume exists, False otherwise
         """
+        if not self._ensure_available():
+            return False
+
         try:
             self.client.volumes.get(volume_name)
             return True
@@ -134,6 +197,11 @@ class DockerExecutorService:
         Returns:
             Tuple of (success, stdout, stderr, error_message)
         """
+        if not self._ensure_available():
+            error_message = "Docker is not available; cannot execute code"
+            logger.error(error_message)
+            return False, "", "", error_message
+
         container = None
         try:
             limits = self._get_resource_limits(tier)
@@ -175,8 +243,10 @@ class DockerExecutorService:
 
             # Send code to container via stdin
             socket = container.attach_socket(params={"stdin": 1, "stream": 1})
-            socket._sock.sendall(code.encode("utf-8"))
-            socket.close()
+            try:
+                socket._sock.sendall(code.encode("utf-8"))
+            finally:
+                socket.close()
 
             # Wait for execution with timeout
             result = container.wait(timeout=limits["timeout"])
@@ -248,6 +318,11 @@ class DockerExecutorService:
         Returns:
             Tuple of (success, output, error_message)
         """
+        if not self._ensure_available():
+            error_message = "Docker is not available; cannot install packages"
+            logger.error(error_message)
+            return False, "", error_message
+
         container = None
         try:
             limits = self._get_resource_limits(tier)
@@ -275,7 +350,9 @@ class DockerExecutorService:
             )
 
             # Wait for installation with timeout
-            result = container.wait(timeout=300)  # 5 minute timeout for installation
+            # Timeout configurable via settings
+            result = container.wait(timeout=getattr(
+                settings, "PACKAGE_INSTALL_TIMEOUT", 300))
             exit_code = result.get("StatusCode", 1)
 
             # Get logs
@@ -312,6 +389,10 @@ class DockerExecutorService:
         Returns:
             List of package names with versions, or None on error
         """
+        if not self._ensure_available():
+            logger.error("Docker is not available; cannot list packages")
+            return None
+
         container = None
         try:
             container = self.client.containers.run(
@@ -352,6 +433,9 @@ class DockerExecutorService:
         Returns:
             Number of containers removed
         """
+        if not self._ensure_available():
+            return 0
+
         try:
             containers = self.client.containers.list(
                 all=True,
@@ -367,7 +451,8 @@ class DockerExecutorService:
                     container.remove()
                     count += 1
                 except Exception as e:
-                    logger.warning(f"Failed to remove container {container.id}: {e}")
+                    logger.warning(
+                        f"Failed to remove container {container.id}: {e}")
 
             logger.info(f"Cleaned up {count} stopped containers")
             return count
@@ -388,6 +473,9 @@ class DockerExecutorService:
         Returns:
             Size in bytes, or None if not available
         """
+        if not self._ensure_available():
+            return None
+
         try:
             volume = self.client.volumes.get(volume_name)
             # Docker doesn't directly provide volume size

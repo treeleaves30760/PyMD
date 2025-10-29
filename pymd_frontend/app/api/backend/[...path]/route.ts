@@ -1,7 +1,8 @@
 import { getSession } from '@auth0/nextjs-auth0';
 import { NextRequest, NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 
-const BACKEND_URL = process.env.API_URL || 'http://backend:8000/api/v1';
+const BACKEND_URL = process.env.API_URL || 'http://backend:8000';
 
 export async function GET(
   request: NextRequest,
@@ -41,7 +42,9 @@ async function proxyRequest(
   method: string
 ) {
   try {
-    // Get session without parameters for App Router
+    // Ensure cookies are loaded first (Next.js 15 requirement)
+    await cookies();
+    // Get session for App Router
     const session = await getSession();
 
     if (!session || !session.user) {

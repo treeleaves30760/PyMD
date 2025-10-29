@@ -1,5 +1,60 @@
 # PyMD Implementation Changelog
 
+## 2025-10-30: User Environments Phase 2 Complete
+
+### ✅ Completed
+
+**API Endpoints:**
+- `POST /api/v1/environments` - Create new environment
+- `GET /api/v1/environments` - List user's environments
+- `GET /api/v1/environments/{id}` - Get single environment
+- `DELETE /api/v1/environments/{id}` - Delete environment
+- `POST /api/v1/environments/{id}/reset` - Reset environment
+- `PATCH /api/v1/environments/{id}` - Update environment
+- `GET /api/v1/environments/stats` - Get usage statistics
+
+**Features:**
+- Authentication using Auth0 JWT tokens
+- Authorization checks (user can only access their own environments)
+- Quota enforcement before environment creation
+- Comprehensive error handling with proper HTTP status codes
+- Input validation using Pydantic schemas
+
+**Testing:**
+- 15 comprehensive test cases covering:
+  - Successful operations (create, list, get, update, delete, reset)
+  - Error cases (quota exceeded, not found, unauthorized)
+  - Input validation (invalid names, missing fields)
+  - Statistics endpoint
+
+**Files Created:**
+- `pymd/backend/app/api/v1/environments.py` - API router (305 lines)
+- `pymd/backend/tests/test_api_environments.py` - Test suite (285 lines)
+
+**Files Modified:**
+- `pymd/backend/app/main.py` - Registered environments router
+
+### 📋 Next Steps (Phase 3-5)
+
+**Phase 3** (Weeks 3-4): Package Management
+- PackageService implementation
+- pip install/uninstall endpoints
+- WebSocket progress updates
+- Requirements.txt import
+
+**Phase 4** (Weeks 4-5): Code Execution Integration
+- Celery setup for async execution
+- Update render endpoints
+- Execution history tracking
+
+**Phase 5** (Weeks 5-6): Resource Management & Monitoring
+- Prometheus metrics
+- Cleanup jobs
+- Admin dashboard
+- Usage analytics
+
+---
+
 ## 2025-10-29: User Environments Phase 1 Complete
 
 ### ✅ Completed

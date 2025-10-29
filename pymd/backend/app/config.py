@@ -68,6 +68,8 @@ class Settings(BaseSettings):
     DOCKER_PIDS_LIMIT: int = 100  # Max processes per container
     DOCKER_ULIMIT_NOFILE_SOFT: int = 64
     DOCKER_ULIMIT_NOFILE_HARD: int = 128
+    DOCKER_ENABLED: bool = True
+    DOCKER_HOST_OVERRIDE: Optional[str] = None
 
     # Session
     SESSION_TTL: int = 86400  # 24 hours in seconds

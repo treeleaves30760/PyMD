@@ -8,8 +8,10 @@ from pydantic import BaseModel, Field
 class EnvironmentBase(BaseModel):
     """Base environment schema"""
 
-    name: str = Field(..., min_length=1, max_length=100, description="Environment name")
-    python_version: str = Field(default="3.11", pattern="^3\\.1[0-9]$", description="Python version")
+    name: str = Field(..., min_length=1, max_length=100,
+                      description="Environment name")
+    python_version: str = Field(
+        default="3.11", pattern="^3\\.(9|1[0-9]|[2-9][0-9])$", description="Python version")
 
 
 class EnvironmentCreate(EnvironmentBase):
@@ -65,14 +67,17 @@ class EnvironmentStatsResponse(BaseModel):
 class PackageBase(BaseModel):
     """Base package schema"""
 
-    package_name: str = Field(..., min_length=1, max_length=255, description="Package name")
-    version: Optional[str] = Field(None, max_length=100, description="Package version")
+    package_name: str = Field(..., min_length=1,
+                              max_length=255, description="Package name")
+    version: Optional[str] = Field(
+        None, max_length=100, description="Package version")
 
 
 class PackageInstallRequest(BaseModel):
     """Package installation request"""
 
-    packages: List[str] = Field(..., min_items=1, max_items=10, description="List of packages to install")
+    packages: List[str] = Field(..., min_items=1, max_items=10,
+                                description="List of packages to install")
 
 
 class PackageResponse(BaseModel):
@@ -100,7 +105,8 @@ class ExecutionRequest(BaseModel):
     """Code execution request"""
 
     code: str = Field(..., min_length=1, description="Python code to execute")
-    environment_id: Optional[UUID] = Field(None, description="Environment ID (uses default if not provided)")
+    environment_id: Optional[UUID] = Field(
+        None, description="Environment ID (uses default if not provided)")
 
 
 class ExecutionResponse(BaseModel):

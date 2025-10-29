@@ -57,6 +57,7 @@ services:
         condition: service_healthy
     volumes:
       - ./pymd:/app/pymd
+      - /Users/hsupohsiang/.docker/run/docker.sock:/var/run/docker.sock
     command: uvicorn pymd.backend.app.main:app --host 0.0.0.0 --port 8000 --reload
     networks:
       - pymd-network

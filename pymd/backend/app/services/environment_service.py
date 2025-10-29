@@ -5,7 +5,7 @@ and quota enforcement.
 """
 import logging
 from typing import Optional, List, Dict, Any
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_
 from sqlalchemy.exc import IntegrityError
@@ -132,8 +132,8 @@ class EnvironmentService:
         self,
         user_id: uuid.UUID,
         name: str,
-        python_version: str = "3.11",
-        db: AsyncSession
+        db: AsyncSession,
+        python_version: str = "3.11"
     ) -> UserEnvironment:
         """
         Create a new environment for a user.
@@ -168,8 +168,8 @@ class EnvironmentService:
                 status=EnvironmentStatus.CREATING,
                 total_size_bytes=0,
                 package_count=0,
-                created_at=datetime.utcnow(),
-                updated_at=datetime.utcnow(),
+                created_at=datetime.now(timezone.utc),
+                updated_at=datetime.now(timezone.utc),
             )
 
             db.add(environment)
@@ -177,27 +177,31 @@ class EnvironmentService:
             await db.refresh(environment)
 
             # Create Docker volume
-            volume_created = self.docker_service.create_volume(volume_name)
+            import asyncio
+            volume_created = await asyncio.to_thread(self.docker_service.create_volume, volume_name)
 
             if not volume_created:
                 # Rollback database record
                 environment.status = EnvironmentStatus.ERROR
                 await db.commit()
-                raise EnvironmentServiceError(f"Failed to create Docker volume: {volume_name}")
+                raise EnvironmentServiceError(
+                    f"Failed to create Docker volume: {volume_name}")
 
             # Update status to active
             environment.status = EnvironmentStatus.ACTIVE
-            environment.last_used_at = datetime.utcnow()
+            environment.last_used_at = datetime.now(timezone.utc)
             await db.commit()
             await db.refresh(environment)
 
-            logger.info(f"Created environment {environment.id} for user {user_id}")
+            logger.info(
+                f"Created environment {environment.id} for user {user_id}")
             return environment
 
         except IntegrityError as e:
             await db.rollback()
             if "idx_env_user_name" in str(e):
-                raise EnvironmentServiceError(f"Environment '{name}' already exists for this user")
+                raise EnvironmentServiceError(
+                    f"Environment '{name}' already exists for this user")
             raise EnvironmentServiceError(f"Database error: {e}")
 
         except Exception as e:
@@ -237,7 +241,8 @@ class EnvironmentService:
         environment = result.scalar_one_or_none()
 
         if not environment:
-            raise EnvironmentNotFoundError(f"Environment {environment_id} not found")
+            raise EnvironmentNotFoundError(
+                f"Environment {environment_id} not found")
 
         return environment
 
@@ -258,12 +263,15 @@ class EnvironmentService:
         Returns:
             List of UserEnvironment
         """
-        query = select(UserEnvironment).where(UserEnvironment.user_id == user_id)
+        query = select(UserEnvironment).where(
+            UserEnvironment.user_id == user_id)
 
         if not include_deleted:
-            query = query.where(UserEnvironment.status != EnvironmentStatus.DELETED)
+            query = query.where(UserEnvironment.status !=
+                                EnvironmentStatus.DELETED)
 
-        query = query.order_by(UserEnvironment.last_used_at.desc().nullsfirst())
+        query = query.order_by(
+            UserEnvironment.last_used_at.desc().nulls_first())
 
         result = await db.execute(query)
         return list(result.scalars().all())
@@ -289,13 +297,13 @@ class EnvironmentService:
         """
         environment = await self.get_environment(environment_id, user_id, db)
 
-        # Update allowed fields
-        allowed_fields = ["name", "python_version"]
+        # Only allow updating the environment name to avoid inconsistency with Docker volume contents
+        allowed_fields = ["name"]
         for field, value in updates.items():
             if field in allowed_fields and hasattr(environment, field):
                 setattr(environment, field, value)
 
-        environment.updated_at = datetime.utcnow()
+        environment.updated_at = datetime.now(timezone.utc)
         await db.commit()
         await db.refresh(environment)
 
@@ -323,10 +331,12 @@ class EnvironmentService:
 
         try:
             # Delete Docker volume
-            volume_deleted = self.docker_service.delete_volume(environment.volume_name)
+            volume_deleted = self.docker_service.delete_volume(
+                environment.volume_name)
 
             if not volume_deleted:
-                logger.warning(f"Failed to delete Docker volume: {environment.volume_name}")
+                logger.warning(
+                    f"Failed to delete Docker volume: {environment.volume_name}")
 
             # Mark as deleted in database
             environment.status = EnvironmentStatus.DELETED
@@ -369,14 +379,10 @@ class EnvironmentService:
             new_volume_created = self.docker_service.create_volume(old_volume)
 
             if not new_volume_created:
-                raise EnvironmentServiceError("Failed to recreate Docker volume")
+                raise EnvironmentServiceError(
+                    "Failed to recreate Docker volume")
 
             # Clear package records
-            await db.execute(
-                select(EnvironmentPackage).where(
-                    EnvironmentPackage.environment_id == environment_id
-                )
-            )
             # Delete packages
             result = await db.execute(
                 select(EnvironmentPackage).where(
