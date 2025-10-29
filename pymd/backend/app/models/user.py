@@ -39,6 +39,7 @@ class User(Base):
     settings = relationship(
         "UserSettings", back_populates="user", uselist=False, cascade="all, delete-orphan"
     )
+    environments = relationship("UserEnvironment", back_populates="user", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<User {self.email}>"

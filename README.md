@@ -218,7 +218,7 @@ my_project/
 
 ## 🌐 PyMD Web Platform (New!)
 
-PyMD now includes a multi-user web platform with real-time collaboration features!
+PyMD now includes a multi-user web platform with isolated Python environments and real-time collaboration!
 
 ### Features
 - 🔐 **Secure Authentication** - Auth0 integration
@@ -227,6 +227,10 @@ PyMD now includes a multi-user web platform with real-time collaboration feature
 - ⚡ **Real-time Preview** - Live rendering as you type
 - 💾 **Auto-save** - Never lose your work
 - 🎨 **Modern UI** - Built with Next.js 15 and Tailwind CSS
+- 🐳 **🆕 Isolated Environments** - Per-user Docker containers with custom package installation
+- 📦 **🆕 Package Management** - Install any PyPI package with pip (Phase 2)
+- 🛡️ **🆕 Resource Limits** - CPU, memory, and storage quotas per user
+- 🔒 **🆕 Security Isolation** - Code runs in sandboxed containers with no network access
 
 ### Quick Start
 
@@ -237,19 +241,23 @@ Get started in 5 minutes:
 cp .env.example .env
 # Edit .env with your Auth0 credentials
 
-# 2. Start all services
+# 2. Build Docker executor image
+docker build -t pymd-executor:latest -f docker/executor/Dockerfile docker/executor/
+
+# 3. Start all services
 docker compose up --build
 
-# 3. Initialize database
+# 4. Initialize database
 docker compose exec backend alembic upgrade head
 
-# 4. Open http://localhost:3000
+# 5. Open http://localhost:3000
 ```
 
 For detailed setup instructions, see:
 - **[Quick Start Guide](./docs/QUICK_START.md)** - Get running in 5 minutes
 - **[Auth0 Setup Guide](./docs/AUTH0_SETUP_GUIDE.md)** - Complete Auth0 configuration
-- **[Phase 1 Documentation](./docs/README_PHASE1.md)** - Full Phase 1 features and setup
+- **[User Environments Plan](./plans/06_user_environments.md)** - Per-user environment implementation
+- **[Docker Executor Docs](./docker/executor/README.md)** - Executor image documentation
 
 ## 🤝 Contributing
 

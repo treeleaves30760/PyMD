@@ -50,6 +50,25 @@ class Settings(BaseSettings):
     EXECUTION_MEMORY_LIMIT_FREE: str = "512m"
     EXECUTION_MEMORY_LIMIT_PRO: str = "2g"
 
+    # Environment Limits
+    MAX_ENVIRONMENTS_FREE: int = 3
+    MAX_ENVIRONMENTS_PRO: int = 10
+
+    # Package Limits
+    MAX_PACKAGES_FREE: int = 50
+    MAX_PACKAGES_PRO: int = 500
+    MAX_ENVIRONMENT_SIZE_FREE: int = 1_073_741_824  # 1GB in bytes
+    MAX_ENVIRONMENT_SIZE_PRO: int = 10_737_418_240  # 10GB in bytes
+
+    # Docker Settings
+    DOCKER_EXECUTOR_IMAGE: str = "pymd-executor:latest"
+    DOCKER_NETWORK_MODE: str = "none"  # No network access for security
+    DOCKER_VOLUME_DRIVER: str = "local"
+    DOCKER_REGISTRY: str = ""  # Optional private registry
+    DOCKER_PIDS_LIMIT: int = 100  # Max processes per container
+    DOCKER_ULIMIT_NOFILE_SOFT: int = 64
+    DOCKER_ULIMIT_NOFILE_HARD: int = 128
+
     # Session
     SESSION_TTL: int = 86400  # 24 hours in seconds
 

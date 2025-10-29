@@ -16,7 +16,15 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 # Import models and config
 from pymd.backend.app.config import settings
 from pymd.backend.app.core.database import Base
-from pymd.backend.app.models import User, Document, Session, UserSettings
+from pymd.backend.app.models import (
+    User,
+    Document,
+    Session,
+    UserSettings,
+    UserEnvironment,
+    EnvironmentPackage,
+    EnvironmentExecution,
+)
 
 # this is the Alembic Config object
 config = context.config
