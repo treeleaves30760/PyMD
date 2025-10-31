@@ -339,7 +339,9 @@ class EnvironmentService:
                     f"Failed to delete Docker volume: {environment.volume_name}")
 
             # Mark as deleted in database
+            # Append timestamp to volume_name to free up the unique constraint
             environment.status = EnvironmentStatus.DELETED
+            environment.volume_name = f"{environment.volume_name}_deleted_{int(datetime.utcnow().timestamp())}"
             environment.updated_at = datetime.utcnow()
             await db.commit()
 

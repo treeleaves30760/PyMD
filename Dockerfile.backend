@@ -26,8 +26,9 @@ COPY pymd/ /app/pymd/
 RUN pip install -e .
 RUN pip install -r /app/pymd/backend/requirements.txt
 
-# Create non-root user
-RUN useradd -m -u 1000 pymd && \
+# Create non-root user and docker group
+RUN groupadd -g 999 docker || true && \
+    useradd -m -u 1000 -G docker pymd && \
     chown -R pymd:pymd /app
 
 USER pymd
