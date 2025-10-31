@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 from pymd.backend.app.config import settings
 from pymd.backend.app.core.database import init_db, close_db
 from pymd.backend.app.core.redis import init_redis, close_redis
-from pymd.backend.app.api.v1 import auth, users, health, documents, render, environments
+from pymd.backend.app.api.v1 import auth, users, health, documents, render, environments, packages
 
 
 @asynccontextmanager
@@ -64,6 +64,7 @@ app.include_router(users.router, prefix=settings.API_V1_PREFIX, tags=["users"])
 app.include_router(documents.router, prefix=settings.API_V1_PREFIX, tags=["documents"])
 app.include_router(render.router, prefix=settings.API_V1_PREFIX, tags=["render"])
 app.include_router(environments.router, prefix=settings.API_V1_PREFIX, tags=["environments"])
+app.include_router(packages.router, prefix=settings.API_V1_PREFIX, tags=["packages"])
 
 
 @app.get("/")

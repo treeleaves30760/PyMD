@@ -46,19 +46,18 @@ class UserEnvironment(Base):
 
     # Timestamps
     last_used_at = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, default=lambda: datetime.now(
-        timezone.utc), nullable=False)
-    updated_at = Column(DateTime, default=lambda: datetime.now(
-        timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     # Relationships
     user = relationship("User", back_populates="environments")
     packages = relationship(
         "EnvironmentPackage", back_populates="environment", cascade="all, delete-orphan"
     )
-    executions = relationship(
-        "EnvironmentExecution", back_populates="environment", cascade="all, delete-orphan"
-    )
+    # Note: executions relationship will be added in Phase 4 when EnvironmentExecution model is created
+    # executions = relationship(
+    #     "EnvironmentExecution", back_populates="environment", cascade="all, delete-orphan"
+    # )
 
     # Indexes and constraints
     __table_args__ = (

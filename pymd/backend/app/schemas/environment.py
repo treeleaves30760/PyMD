@@ -77,7 +77,16 @@ class PackageInstallRequest(BaseModel):
     """Package installation request"""
 
     packages: List[str] = Field(..., min_items=1, max_items=10,
-                                description="List of packages to install")
+                                description="List of packages to install (e.g., ['numpy', 'pandas==2.0.0'])")
+
+
+class PackageInstallResponse(BaseModel):
+    """Package installation response"""
+
+    success_count: int
+    fail_count: int
+    successful: List[dict]
+    failed: List[dict]
 
 
 class PackageResponse(BaseModel):
@@ -118,3 +127,18 @@ class ExecutionResponse(BaseModel):
     error_message: Optional[str]
     execution_time_ms: Optional[int]
     environment_id: UUID
+
+
+class RequirementsImportRequest(BaseModel):
+    """Requirements.txt import request"""
+
+    requirements: str = Field(..., min_length=1, description="Contents of requirements.txt file")
+
+
+class RequirementsImportResponse(BaseModel):
+    """Requirements.txt import response"""
+
+    success_count: int
+    fail_count: int
+    successful: List[dict]
+    failed: List[dict]

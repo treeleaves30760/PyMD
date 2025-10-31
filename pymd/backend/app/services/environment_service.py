@@ -168,8 +168,8 @@ class EnvironmentService:
                 status=EnvironmentStatus.CREATING,
                 total_size_bytes=0,
                 package_count=0,
-                created_at=datetime.now(timezone.utc),
-                updated_at=datetime.now(timezone.utc),
+                created_at=datetime.utcnow(),
+                updated_at=datetime.utcnow(),
             )
 
             db.add(environment)
@@ -189,7 +189,7 @@ class EnvironmentService:
 
             # Update status to active
             environment.status = EnvironmentStatus.ACTIVE
-            environment.last_used_at = datetime.now(timezone.utc)
+            environment.last_used_at = datetime.utcnow()
             await db.commit()
             await db.refresh(environment)
 
@@ -303,7 +303,7 @@ class EnvironmentService:
             if field in allowed_fields and hasattr(environment, field):
                 setattr(environment, field, value)
 
-        environment.updated_at = datetime.now(timezone.utc)
+        environment.updated_at = datetime.utcnow()
         await db.commit()
         await db.refresh(environment)
 

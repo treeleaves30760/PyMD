@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { useEditorStore } from '@/stores/editorStore'
@@ -23,6 +24,8 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu'
+import { EnvironmentSelector } from '@/components/environments/environment-selector'
+import { EnvironmentManager } from '@/components/environments/environment-manager'
 
 interface DocumentToolbarProps {
   onSave: () => void
@@ -45,21 +48,28 @@ export function DocumentToolbar({
     togglePreview,
   } = useEditorStore()
   const { theme, toggleTheme } = useUIStore()
+  const [showEnvManager, setShowEnvManager] = useState(false)
 
   return (
-    <div className="flex h-14 items-center justify-between border-b bg-background px-4">
-      <div className="flex items-center gap-2">
-        <Button
-          variant="default"
-          size="sm"
-          onClick={onSave}
-          disabled={!isDirty || isSaving}
-        >
-          <Save className="mr-2 h-4 w-4" />
-          {isSaving ? 'Saving...' : 'Save'}
-        </Button>
+    <>
+      <div className="flex h-14 items-center justify-between border-b bg-background px-4">
+        <div className="flex items-center gap-2">
+          {/* Environment Selector */}
+          <EnvironmentSelector onManage={() => setShowEnvManager(true)} />
 
-        <Separator orientation="vertical" className="h-6" />
+          <Separator orientation="vertical" className="h-6" />
+
+          <Button
+            variant="default"
+            size="sm"
+            onClick={onSave}
+            disabled={!isDirty || isSaving}
+          >
+            <Save className="mr-2 h-4 w-4" />
+            {isSaving ? 'Saving...' : 'Save'}
+          </Button>
+
+          <Separator orientation="vertical" className="h-6" />
 
         <Button
           variant="ghost"
@@ -133,11 +143,15 @@ export function DocumentToolbar({
         </DropdownMenu>
       </div>
 
-      <div className="flex items-center gap-2">
-        {isDirty && (
-          <span className="text-sm text-muted-foreground">Unsaved changes</span>
-        )}
+        <div className="flex items-center gap-2">
+          {isDirty && (
+            <span className="text-sm text-muted-foreground">Unsaved changes</span>
+          )}
+        </div>
       </div>
-    </div>
+
+      {/* Environment Manager Modal */}
+      <EnvironmentManager open={showEnvManager} onOpenChange={setShowEnvManager} />
+    </>
   )
 }

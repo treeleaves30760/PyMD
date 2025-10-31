@@ -42,6 +42,18 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 
 async def init_db():
     """Initialize database (create tables)"""
+    # Import all models to register them with Base.metadata
+    from pymd.backend.app.models import (
+        User,
+        UserRole,
+        Document,
+        Session,
+        UserSettings,
+        UserEnvironment,
+        EnvironmentStatus,
+        EnvironmentPackage,
+    )
+
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
