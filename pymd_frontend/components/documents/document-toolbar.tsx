@@ -16,6 +16,7 @@ import {
   Settings,
   Sun,
   Moon,
+  RefreshCw,
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -30,6 +31,7 @@ import { EnvironmentManager } from '@/components/environments/environment-manage
 interface DocumentToolbarProps {
   onSave: () => void
   onExport: (format: 'html' | 'markdown' | 'json') => void
+  onReRender?: () => void
   isSaving?: boolean
   documentId?: string
 }
@@ -37,6 +39,7 @@ interface DocumentToolbarProps {
 export function DocumentToolbar({
   onSave,
   onExport,
+  onReRender,
   isSaving = false,
   documentId,
 }: DocumentToolbarProps) {
@@ -67,6 +70,16 @@ export function DocumentToolbar({
           >
             <Save className="mr-2 h-4 w-4" />
             {isSaving ? 'Saving...' : 'Save'}
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onReRender}
+            title="Force re-render preview"
+          >
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Re-render
           </Button>
 
           <Separator orientation="vertical" className="h-6" />

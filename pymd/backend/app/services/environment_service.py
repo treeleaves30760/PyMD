@@ -338,10 +338,31 @@ class EnvironmentService:
                 logger.warning(
                     f"Failed to delete Docker volume: {environment.volume_name}")
 
-            # Mark as deleted in database
-            # Append timestamp to volume_name to free up the unique constraint
+            # Mark as deleted in database and free up unique constraints on name/volume
+            original_name = environment.name
+            original_volume_name = environment.volume_name
+            timestamp_suffix = int(datetime.utcnow().timestamp())
+            deleted_suffix = f"_deleted_{timestamp_suffix}"
+
+            def _with_deleted_suffix(value: str, suffix: str, max_length: Optional[int]) -> str:
+                """Append suffix ensuring the result stays within the column length limit."""
+                if not max_length:
+                    return f"{value}{suffix}"
+                allowed_prefix = max_length - len(suffix)
+                if allowed_prefix <= 0:
+                    return suffix[-max_length:]
+                return f"{value[:allowed_prefix]}{suffix}"
+
             environment.status = EnvironmentStatus.DELETED
-            environment.volume_name = f"{environment.volume_name}_deleted_{int(datetime.utcnow().timestamp())}"
+            name_max_length = UserEnvironment.__table__.columns["name"].type.length
+            environment.name = _with_deleted_suffix(
+                original_name, deleted_suffix, name_max_length
+            )
+
+            volume_max_length = UserEnvironment.__table__.columns["volume_name"].type.length
+            environment.volume_name = _with_deleted_suffix(
+                original_volume_name, deleted_suffix, volume_max_length
+            )
             environment.updated_at = datetime.utcnow()
             await db.commit()
 

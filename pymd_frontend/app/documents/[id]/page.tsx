@@ -20,6 +20,7 @@ export default function DocumentPage({ params }: { params: Promise<{ id: string 
   const { toast } = useToast()
   const [localContent, setLocalContent] = useState('')
   const [hasLoaded, setHasLoaded] = useState(false)
+  const [forceRenderTrigger, setForceRenderTrigger] = useState(0)
 
   // Editor store
   const { showPreview, isFullScreen, autoSaveEnabled, markAsSaved, reset } = useEditorStore()
@@ -106,6 +107,14 @@ export default function DocumentPage({ params }: { params: Promise<{ id: string 
     }
   }, [document, exportMutation, toast])
 
+  const handleReRender = useCallback(() => {
+    setForceRenderTrigger(prev => prev + 1)
+    toast({
+      title: 'Re-rendering',
+      description: 'Forcing preview to re-render...',
+    })
+  }, [toast])
+
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -137,6 +146,7 @@ export default function DocumentPage({ params }: { params: Promise<{ id: string 
       <DocumentToolbar
         onSave={handleSave}
         onExport={handleExport}
+        onReRender={handleReRender}
         isSaving={updateMutation.isPending}
         documentId={document.id}
       />
@@ -153,7 +163,7 @@ export default function DocumentPage({ params }: { params: Promise<{ id: string 
             </Panel>
             <PanelResizeHandle className="w-2 bg-border hover:bg-primary/20 transition-colors" />
             <Panel defaultSize={50} minSize={30}>
-              <DocumentPreview content={localContent} />
+              <DocumentPreview content={localContent} forceRenderTrigger={forceRenderTrigger} />
             </Panel>
           </PanelGroup>
         ) : (

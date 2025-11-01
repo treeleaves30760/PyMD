@@ -7,9 +7,10 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 
 interface DocumentPreviewProps {
   content: string
+  forceRenderTrigger?: number
 }
 
-export function DocumentPreview({ content }: DocumentPreviewProps) {
+export function DocumentPreview({ content, forceRenderTrigger }: DocumentPreviewProps) {
   const [debouncedContent, setDebouncedContent] = useState(content)
   const { mutate: renderPreview, data, isPending, error } = useRenderPreview()
 
@@ -28,6 +29,13 @@ export function DocumentPreview({ content }: DocumentPreviewProps) {
       renderPreview({ content: debouncedContent })
     }
   }, [debouncedContent, renderPreview])
+
+  // Force re-render when trigger changes
+  useEffect(() => {
+    if (forceRenderTrigger !== undefined && forceRenderTrigger > 0 && content) {
+      renderPreview({ content })
+    }
+  }, [forceRenderTrigger, content, renderPreview])
 
   if (isPending) {
     return (
