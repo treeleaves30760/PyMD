@@ -12,7 +12,7 @@ from typing import Dict, Any, Optional
 
 class CodeExecutor:
     """Handles Python code execution with caching and variable management"""
-    
+
     def __init__(self):
         self.variables = {}
         self.code_cache = {}
@@ -24,6 +24,9 @@ class CodeExecutor:
             'total_execution_time': 0.0,
             'average_execution_time': 0.0
         }
+        # IPyKernel-like incremental execution support
+        self.block_history = []  # List of {index, code_hash, variables_snapshot}
+        self.variables_checkpoints = {}  # Map block_index -> variable snapshot
     
     def _get_code_hash(self, code: str, variables_snapshot: Dict[str, Any]) -> str:
         """Generate a hash for code block and variable state"""
@@ -45,6 +48,84 @@ class CodeExecutor:
                 pass
         return snapshot
 
+    def _deep_copy_variables(self) -> Dict[str, Any]:
+        """Create a deep copy of current variables for checkpoint"""
+        import copy
+        checkpoint = {}
+        for key, value in self.variables.items():
+            try:
+                checkpoint[key] = copy.deepcopy(value)
+            except:
+                # For non-copyable objects, just use reference
+                checkpoint[key] = value
+        return checkpoint
+
+    def restore_variables(self, variables: Dict[str, Any]):
+        """Restore variables from a checkpoint"""
+        import copy
+        self.variables.clear()
+        for key, value in variables.items():
+            try:
+                self.variables[key] = copy.deepcopy(value)
+            except:
+                self.variables[key] = value
+
+    def save_checkpoint(self, block_index: int):
+        """Save variable state at a specific block index"""
+        self.variables_checkpoints[block_index] = self._deep_copy_variables()
+
+    def restore_checkpoint(self, block_index: int):
+        """Restore variables to a specific block index"""
+        if block_index in self.variables_checkpoints:
+            self.restore_variables(self.variables_checkpoints[block_index])
+            return True
+        return False
+
+    def get_block_code_hash(self, code: str) -> str:
+        """Generate a hash for just the code block (without variables)"""
+        return hashlib.md5(code.encode('utf-8')).hexdigest()
+
+    def update_block_history(self, block_index: int, code: str):
+        """Update block history with current block info"""
+        code_hash = self.get_block_code_hash(code)
+
+        # Extend block_history if needed
+        while len(self.block_history) <= block_index:
+            self.block_history.append(None)
+
+        self.block_history[block_index] = {
+            'index': block_index,
+            'code_hash': code_hash
+        }
+
+    def find_first_changed_block(self, code_blocks: list) -> int:
+        """
+        Find the first block that has changed compared to block history.
+        Returns the index of the first changed block, or -1 if no changes.
+
+        Args:
+            code_blocks: List of tuples (block_index, code_content)
+
+        Returns:
+            Index of first changed block, or -1 if nothing changed
+        """
+        # If block count changed, start from the point where it changed
+        if len(code_blocks) != len(self.block_history):
+            return min(len(code_blocks), len(self.block_history))
+
+        # Compare each block
+        for i, (block_index, code) in enumerate(code_blocks):
+            if i >= len(self.block_history) or self.block_history[i] is None:
+                return i
+
+            current_hash = self.get_block_code_hash(code)
+            previous_hash = self.block_history[i]['code_hash']
+
+            if current_hash != previous_hash:
+                return i
+
+        return -1  # No changes detected
+
     def clear_cache(self):
         """Clear all cached results"""
         self.code_cache.clear()
@@ -55,6 +136,8 @@ class CodeExecutor:
             'total_execution_time': 0.0,
             'average_execution_time': 0.0
         }
+        self.block_history.clear()
+        self.variables_checkpoints.clear()
     
     def get_execution_stats(self) -> Dict[str, Any]:
         """Get execution statistics"""

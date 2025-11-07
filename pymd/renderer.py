@@ -61,6 +61,8 @@ class PyMDRenderer:
             'cache_misses': 0,
             'start_time': None
         }
+        # IPyKernel-like incremental execution
+        self.last_parsed_blocks = []  # List of (block_index, code_content)
 
         # Initialize modular components
         self.image_handler = ImageHandler(self.output_dir)
@@ -271,11 +273,83 @@ class PyMDRenderer:
         """Generate hash for entire content"""
         return hashlib.md5(content.encode('utf-8')).hexdigest()
 
+    def _extract_code_blocks(self, pymd_content: str) -> list:
+        """
+        Extract all executable code blocks from PyMD content.
+        Returns list of (block_index, code_content) tuples.
+        """
+        code_blocks = []
+        lines = pymd_content.split('\n')
+        i = 0
+        block_index = 0
+
+        while i < len(lines):
+            line = lines[i]
+            stripped_line = line.strip()
+
+            # Skip empty lines and comments
+            if not stripped_line or stripped_line.startswith('//') or stripped_line == 'import pymd':
+                i += 1
+                continue
+
+            # Handle executable code blocks with ``` (non-prefixed)
+            if stripped_line == '```':
+                i += 1  # Skip opening ```
+                code_lines = []
+
+                # Collect code until closing ```
+                while i < len(lines):
+                    current_line = lines[i]
+                    current_stripped = current_line.strip()
+
+                    if current_stripped == '```':
+                        i += 1  # Skip closing ```
+                        break
+
+                    code_lines.append(current_line)
+                    i += 1
+
+                if code_lines:
+                    code_block = '\n'.join(code_lines)
+                    code_blocks.append((block_index, code_block))
+                    block_index += 1
+                continue
+
+            # Handle executable code blocks in markdown (# ```)
+            if stripped_line.startswith('#'):
+                markdown_content = stripped_line[1:].strip()
+
+                if markdown_content == '```':
+                    i += 1  # Skip opening # ```
+                    code_lines = []
+
+                    # Collect code until closing # ```
+                    while i < len(lines):
+                        current_line = lines[i]
+                        current_stripped = current_line.strip()
+
+                        if current_stripped.startswith('#') and current_stripped[1:].strip() == '```':
+                            i += 1  # Skip closing # ```
+                            break
+
+                        code_lines.append(current_line)
+                        i += 1
+
+                    if code_lines:
+                        code_block = '\n'.join(code_lines)
+                        code_blocks.append((block_index, code_block))
+                        block_index += 1
+                    continue
+
+            i += 1
+
+        return code_blocks
+
     def parse_and_render(self, pymd_content: str) -> str:
         """Parse PyMD content with ``` blocks for code and # prefixed markdown content"""
         self.status_info['start_time'] = time.time()
         self._update_status("Starting render process", 0.0)
-        
+
         # Check if content has changed significantly
         content_hash = self._get_content_hash(pymd_content)
 
@@ -285,15 +359,43 @@ class PyMDRenderer:
             self._update_status("Using cached result", 100.0)
             self.status_info['cache_hits'] += 1
             return self.generate_html()
-        
+
         self.status_info['cache_misses'] += 1
 
         # Content changed, need to re-parse
         self.last_full_content_hash = content_hash
-        self._update_status("Parsing content", 5.0)
+        self._update_status("Analyzing changes", 5.0)
 
-        # Extract code blocks for change detection (could be used for future optimizations)
-        # current_code_blocks = self._extract_code_blocks(pymd_content)
+        # IPyKernel-like incremental execution:
+        # 1. Extract all code blocks
+        current_code_blocks = self._extract_code_blocks(pymd_content)
+
+        # 2. Find first changed block
+        first_changed_block_idx = self.code_executor.find_first_changed_block(current_code_blocks)
+
+        # 3. Restore variables to checkpoint before first changed block
+        if first_changed_block_idx >= 0:
+            self._update_status(f"Detected change in block {first_changed_block_idx + 1}, restoring state", 7.0)
+            if first_changed_block_idx > 0:
+                # Restore to checkpoint before the changed block
+                restored = self.code_executor.restore_checkpoint(first_changed_block_idx - 1)
+                if not restored:
+                    # No checkpoint available, need to execute from beginning
+                    self._update_status("No checkpoint available, executing from start", 8.0)
+                    first_changed_block_idx = 0
+                    self.code_executor.variables.clear()
+            else:
+                # Changed block is the first one, clear all variables
+                self.code_executor.variables.clear()
+        else:
+            # No changes detected in code blocks
+            self._update_status("No block changes detected", 8.0)
+            first_changed_block_idx = -1
+
+        # Store current blocks for next comparison
+        self.last_parsed_blocks = current_code_blocks
+
+        self._update_status("Rendering content", 10.0)
 
         # Clear elements for fresh render
         self.elements = []
@@ -345,8 +447,16 @@ class PyMDRenderer:
                     try:
                         # Update progress for code execution
                         progress = 10.0 + (i / total_lines) * 70.0
-                        self._update_status(f"Executing code block {code_block_index + 1}", progress)
-                        
+
+                        # IPyKernel-like incremental execution logic
+                        should_execute = (first_changed_block_idx < 0 or
+                                        code_block_index >= first_changed_block_idx)
+
+                        if should_execute:
+                            self._update_status(f"Executing code block {code_block_index + 1}", progress)
+                        else:
+                            self._update_status(f"Skipping unchanged block {code_block_index + 1}", progress)
+
                         # Create cache key for this specific code block
                         variables_snapshot = self.code_executor._get_variable_snapshot()
                         cache_key = f"exec_{code_block_index}_{self.code_executor._get_code_hash(code_block, variables_snapshot)}"
@@ -357,11 +467,11 @@ class PyMDRenderer:
                             self.status_info['cache_hits'] += 1
                         else:
                             self.status_info['cache_misses'] += 1
-                        
+
                         # Create status callback for heavy import detection
                         def status_update(status):
                             self._update_status(f"{status}", progress)
-                        
+
                         result = self.execute_code(code_block, cache_key, status_update)
                         if result['success']:
                             if result['output'].strip():
@@ -373,6 +483,11 @@ class PyMDRenderer:
                             error_html = f'<pre class="error">Code execution error: {result["error"]}</pre>'
                             self.add_element(
                                 'error', result['error'], error_html)
+
+                        # Save checkpoint after execution (for incremental execution)
+                        if should_execute:
+                            self.code_executor.save_checkpoint(code_block_index)
+                            self.code_executor.update_block_history(code_block_index, code_block)
 
                         code_block_index += 1
                     except Exception as e:
@@ -462,8 +577,16 @@ class PyMDRenderer:
                         try:
                             # Update progress for code execution
                             progress = 10.0 + (i / total_lines) * 70.0
-                            self._update_status(f"Executing embedded code block {code_block_index + 1}", progress)
-                            
+
+                            # IPyKernel-like incremental execution logic
+                            should_execute = (first_changed_block_idx < 0 or
+                                            code_block_index >= first_changed_block_idx)
+
+                            if should_execute:
+                                self._update_status(f"Executing embedded code block {code_block_index + 1}", progress)
+                            else:
+                                self._update_status(f"Skipping unchanged embedded block {code_block_index + 1}", progress)
+
                             # Create cache key for this specific code block
                             variables_snapshot = self.code_executor._get_variable_snapshot()
                             cache_key = f"exec_{code_block_index}_{self.code_executor._get_code_hash(code_block, variables_snapshot)}"
@@ -474,11 +597,11 @@ class PyMDRenderer:
                                 self.status_info['cache_hits'] += 1
                             else:
                                 self.status_info['cache_misses'] += 1
-                            
+
                             # Create status callback for heavy import detection
                             def status_update(status):
                                 self._update_status(f"{status}", progress)
-                            
+
                             result = self.execute_code(code_block, cache_key, status_update)
                             if result['success']:
                                 if result['output'].strip():
@@ -490,6 +613,11 @@ class PyMDRenderer:
                                 error_html = f'<pre class="error">Code execution error: {result["error"]}</pre>'
                                 self.add_element(
                                     'error', result['error'], error_html)
+
+                            # Save checkpoint after execution (for incremental execution)
+                            if should_execute:
+                                self.code_executor.save_checkpoint(code_block_index)
+                                self.code_executor.update_block_history(code_block_index, code_block)
 
                             code_block_index += 1
                         except Exception as e:
