@@ -63,3 +63,7 @@ publish.sh
 *.tmp
 .temp/
 temp/
+
+# env files
+*.env
+.env.local
